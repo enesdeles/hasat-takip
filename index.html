@@ -152,7 +152,23 @@ function pdfOlustur(){
   doc.setFontSize(11);
   doc.text(`TOPLAM KUTU: ${toplam}`,10,y);
 
-  doc.save("hasat_kaydi.pdf");
+  const pdfBlob = doc.output("blob");
+
+if (navigator.share) {
+  const file = new File([pdfBlob], "hasat_kaydi.pdf", { type: "application/pdf" });
+  navigator.share({
+    files: [file],
+    title: "Hasat Kaydı",
+    text: "Günlük hasat kaydı PDF"
+  });
+} else {
+  const url = URL.createObjectURL(pdfBlob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "hasat_kaydi.pdf";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 }
 </script>
 
