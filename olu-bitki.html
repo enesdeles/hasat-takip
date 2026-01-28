@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Ölü Bitki Takibi</title>
+<title>Ölü Bitki Kesimi</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -19,127 +19,188 @@ button.gray{background:#607d8b}
 button.pdf{background:#f44336}
 table{width:100%;border-collapse:collapse;background:#fff;margin-top:10px}
 th,td{border:1px solid #ccc;padding:8px;text-align:center}
-th{background:#fdecea}
-select{width:100%;padding:8px}
-#total{text-align:center;font-size:18px;font-weight:bold;margin:15px 0;padding:10px;background:#fff}
+th{background:#fdecea;color:#c62828}
+select{width:100%;padding:8px;font-size:14px;border-radius:4px;border:1px solid #ccc}
+#total{text-align:center;font-size:18px;font-weight:bold;margin:15px 0;padding:10px;background:#fff;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+.action-box{background:#fff; padding:15px; border-radius:8px; border:1px solid #ddd; margin-top:10px}
 </style>
 </head>
 <body>
 
 <h1>🌿 Ölü Bitki Kesimi</h1>
-<button class="gray" onclick="window.location.href='index.html'">⬅️ Geri Dön</button>
+<button class="gray" onclick="window.location.href='index.html'">⬅️ Hasat Takibe Dön</button>
 
 <table id="table">
-    <thead><tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Adet</th></tr></thead>
+    <thead>
+        <tr>
+            <th style="width:15%">Tünel</th>
+            <th style="width:15%">Sıra</th>
+            <th>Personel</th>
+            <th style="width:20%">Adet</th>
+        </tr>
+    </thead>
     <tbody id="tableBody"></tbody>
 </table>
 
 <div id="total">Toplam Kesilen: 0</div>
 
-<div style="background:#fff; padding:10px; border-radius:6px; border:1px solid #ddd">
-    <button class="pdf" onclick="generatePDF()">📄 Tabloyu PDF Yap</button>
+<div class="action-box">
+    <button class="pdf" onclick="generatePDF()">📄 Tabloyu PDF Yap (Paylaş)</button>
     <button class="blue" onclick="finishDay()">💾 Günü Bitir ve Arşivle</button>
     <button class="gray" onclick="downloadReport()">📊 Eski Kayıtları Excel İndir</button>
 </div>
 
 <script>
-const PERSONEL_KEY = "sera_personeller", DATA_KEY = "olu_bitki_data", HISTORY_KEY = "genel_is_gecmisi";
-let personeller = JSON.parse(localStorage.getItem(PERSONEL_KEY)) || [];
+// ANAHTARLAR (index.html ile aynı olmalı)
+const PERSONEL_KEY = "sera_personeller"; 
+const DATA_KEY = "olu_bitki_data";
+const HISTORY_KEY = "genel_is_gecmisi";
+
+// Varsayılan Personel Listesi (Eğer hafıza boşsa)
+const defaultP = ["Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime","Fatma Demiral","Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop","Keziban tasoluk","Keziban yüce","Keziban yüksek","Meryem","Müjgan","Mümine","Neslihan","Özgül","Raziye koçak","Raziye sarı","Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya","Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral","Ummuhan özdemir","Yaşar"];
+
+// Personelleri localStorage'dan çek
+let personeller = JSON.parse(localStorage.getItem(PERSONEL_KEY)) || defaultP;
 let data = JSON.parse(localStorage.getItem(DATA_KEY)) || {};
 
-function sorted() { return [...personeller].sort((a, b) => a.localeCompare(b, 'tr')); }
+// Alfabetik sıralama
+function sorted() { 
+    return [...personeller].sort((a, b) => a.localeCompare(b, 'tr')); 
+}
 
+// Tabloyu Oluşturma
 function renderTable() {
-    let h = "";
+    let html = "";
     for(let t = 19; t >= 1; t--) {
         for(let s = 1; s <= 6; s++) {
             const id = `${t}-${s}`;
-            h += `<tr data-id="${id}"><td><b>${t}</b></td><td>${s}</td><td>${pSel(id)}</td><td>${kSel(id)}</td></tr>`;
+            html += `<tr data-id="${id}">
+                <td><b>${t}</b></td>
+                <td>${s}</td>
+                <td>${createPersonelSelect(id)}</td>
+                <td>${createCountSelect(id)}</td>
+            </tr>`;
         }
     }
-    document.getElementById("tableBody").innerHTML = h;
-    restore();
+    document.getElementById("tableBody").innerHTML = html;
+    restoreValues();
 }
 
-function pSel(id) {
-    let o = `<option value="">Seç</option>`;
-    sorted().forEach(p => o += `<option value="${p}">${p}</option>`);
-    return `<select onchange="save('${id}','p',this.value)">${o}</select>`;
+function createPersonelSelect(id) {
+    let options = `<option value="">Seçiniz</option>`;
+    sorted().forEach(p => {
+        options += `<option value="${p}">${p}</option>`;
+    });
+    return `<select onchange="saveData('${id}','p',this.value)">${options}</select>`;
 }
 
-function kSel(id) {
-    let o = "";
-    for(let i = 0; i <= 500; i++) o += `<option value="${i}">${i}</option>`;
-    return `<select onchange="save('${id}','k',this.value)">${o}</select>`;
+function createCountSelect(id) {
+    let options = "";
+    for(let i = 0; i <= 500; i++) {
+        options += `<option value="${i}">${i}</option>`;
+    }
+    return `<select onchange="saveData('${id}','k',this.value)">${options}</select>`;
 }
 
-function save(id, t, v) {
-    data[id] = data[id] || {}; data[id][t] = v;
+function saveData(id, type, val) {
+    if(!data[id]) data[id] = {};
+    data[id][type] = val;
     localStorage.setItem(DATA_KEY, JSON.stringify(data));
-    calc();
+    calculateTotal();
 }
 
-function calc() {
+function calculateTotal() {
     let sum = 0;
-    Object.values(data).forEach(i => sum += Number(i.k || 0));
+    Object.values(data).forEach(item => sum += Number(item.k || 0));
     document.getElementById("total").innerText = "Toplam Kesilen: " + sum;
 }
 
-function restore() {
+function restoreValues() {
     Object.keys(data).forEach(id => {
         const row = document.querySelector(`tr[data-id="${id}"]`);
         if (row) {
-            const s = row.querySelectorAll("select");
-            s[0].value = data[id].p || "";
-            s[1].value = data[id].k || "0";
+            const selects = row.querySelectorAll("select");
+            if(data[id].p) selects[0].value = data[id].p;
+            if(data[id].k) selects[1].value = data[id].k;
         }
     });
-    calc();
+    calculateTotal();
 }
 
+// PDF OLUŞTURMA
 async function generatePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const tarih = new Date().toLocaleDateString('tr-TR');
+    
     doc.text("Olu Bitki Kesim Raporu - " + tarih, 14, 15);
-    let tableData = [];
+    
+    let tableRows = [];
     Object.keys(data).forEach(id => {
         if(data[id].p && data[id].k > 0) {
             const [tun, sir] = id.split("-");
-            tableData.push([tun, sir, data[id].p, data[id].k]);
+            tableRows.push([tun, sir, data[id].p, data[id].k]);
         }
     });
-    if(tableData.length === 0) { alert("Tablo boş!"); return; }
-    doc.autoTable({ head: [['Tünel', 'Sıra', 'Personel', 'Adet']], body: tableData, startY: 20 });
-    doc.save(`Olu_Bitki_Raporu_${tarih}.pdf`);
+
+    if(tableRows.length === 0) { alert("Kayıtlı veri bulunamadı!"); return; }
+
+    doc.autoTable({
+        head: [['Tünel', 'Sıra', 'Personel', 'Adet']],
+        body: tableRows,
+        startY: 20,
+        styles: { font: 'helvetica', fontSize: 10 }
+    });
+
+    doc.save(`Olu_Bitki_${tarih}.pdf`);
 }
 
-function finishDay(){
-    if(!confirm("Arşivlensin mi?")) return;
-    let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
-    const tarih=new Date().toLocaleDateString('tr-TR');
-    Object.keys(data).forEach(id=>{
-        if(data[id].p && data[id].k > 0){
-            const [tun,sir]=id.split("-");
-            history.push({tarih, tur:"Ölü Bitki", p:data[id].p, t:tun, s:sir, a:data[id].k});
+// GÜNÜ BİTİR VE ARŞİVLE
+function finishDay() {
+    if(!confirm("Bugünkü ölü bitki verileri arşive eklenecek ve sayfa temizlenecek. Onaylıyor musunuz?")) return;
+    
+    let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    const tarih = new Date().toLocaleDateString('tr-TR');
+
+    Object.keys(data).forEach(id => {
+        if(data[id].p && data[id].k > 0) {
+            const [tun, sir] = id.split("-");
+            history.push({
+                tarih: tarih,
+                tur: "Ölü Bitki",
+                p: data[id].p,
+                t: tun,
+                s: sir,
+                a: data[id].k
+            });
         }
     });
-    localStorage.setItem(HISTORY_KEY,JSON.stringify(history));
-    data={}; localStorage.removeItem(DATA_KEY);
+
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    data = {};
+    localStorage.removeItem(DATA_KEY);
+    alert("Başarıyla arşivlendi!");
     location.reload();
 }
 
-function downloadReport(){
-    let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
-    if(!history.length){alert("Rapor yok!"); return;}
-    let csv="\uFEFFTarih;İş Türü;Personel;Tünel;Sıra;Adet\n";
-    history.forEach(r=>csv+=`${r.tarih};${r.tur};${r.p};${r.t};${r.s};${r.a}\n`);
-    const blob=new Blob([csv],{type:'text/csv'});
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);
-    a.download="genel_arsiv.csv"; a.click();
+// EXCEL (CSV) İNDİR
+function downloadReport() {
+    let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    if(history.length === 0) { alert("Arşivde kayıt yok!"); return; }
+    
+    let csv = "\uFEFFTarih;İş Türü;Personel;Tünel;Sıra;Adet\n";
+    history.forEach(r => {
+        csv += `${r.tarih};${r.tur};${r.p};${r.t};${r.s};${r.a}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "Sera_Genel_Rapor.csv";
+    link.click();
 }
 
+// Sayfa yüklendiğinde tabloyu çiz
 renderTable();
 </script>
 </body>
