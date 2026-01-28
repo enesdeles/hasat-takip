@@ -2,175 +2,107 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>Domates Serası Hasat Takip</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hasat Takip</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2e7d32">
 
 <style>
-body{
+body {
   font-family: Arial, sans-serif;
-  background:#f4f6f8;
-  margin:20px;
+  background: #f4f6f8;
+  margin: 0;
+  padding: 10px;
 }
-h2{margin-bottom:10px}
-table{
-  border-collapse:collapse;
-  width:100%;
-  background:white;
+h1 {
+  text-align: center;
+  color: #2e7d32;
 }
-th,td{
-  border:1px solid #ccc;
-  padding:6px;
-  text-align:center;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
 }
-th{
-  background:#2e7d32;
-  color:white;
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  text-align: center;
+  font-size: 14px;
 }
-input{
-  width:95%;
-  padding:4px;
+th {
+  background: #e8f5e9;
 }
-button{
-  margin-top:10px;
-  padding:10px 20px;
-  font-size:16px;
-  background:#2e7d32;
-  color:white;
-  border:none;
-  border-radius:5px;
-  cursor:pointer;
+input {
+  width: 90%;
+  padding: 4px;
 }
-button:hover{background:#256628}
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background: #2e7d32;
+  color: white;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+}
+#total {
+  margin-top: 15px;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+}
 </style>
 </head>
 
 <body>
-
-<h2>🌱 Domates Serası Hasat Takip</h2>
+<h1>🌱 Hasat Takip</h1>
 
 <table id="hasatTable">
-<thead>
 <tr>
-<th>Tünel</th>
-<th>Yön</th>
-<th>Sıra</th>
-<th>Personel</th>
-<th>Kutu</th>
+  <th>Tünel</th>
+  <th>Sıra</th>
+  <th>Personel</th>
+  <th>Kutu</th>
 </tr>
-</thead>
-<tbody></tbody>
 </table>
 
-<button onclick="pdfOlustur()">📄 PDF İndir</button>
+<div id="total">Toplam Kutu: 0</div>
+
+<button onclick="downloadPDF()">PDF İndir</button>
 
 <script>
-// UTF-8 DÜZELTME
-function trFix(text){
-  return text
-    .replace(/İ/g,"I")
-    .replace(/ı/g,"i")
-    .replace(/Ş/g,"S")
-    .replace(/ş/g,"s")
-    .replace(/Ğ/g,"G")
-    .replace(/ğ/g,"g")
-    .replace(/Ü/g,"U")
-    .replace(/ü/g,"u")
-    .replace(/Ö/g,"O")
-    .replace(/ö/g,"o")
-    .replace(/Ç/g,"C")
-    .replace(/ç/g,"c");
+const table = document.getElementById("hasatTable");
+
+for (let t = 19; t >= 1; t--) {
+  for (let s = 1; s <= 6; s++) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${t}</td>
+      <td>${s}</td>
+      <td><input></td>
+      <td><input type="number" oninput="calcTotal()"></td>
+    `;
+    table.appendChild(tr);
+  }
 }
 
-const tbody=document.querySelector("#hasatTable tbody");
-
-// TABLO OLUŞTUR
-for(let t=19;t>=1;t--){
-  let sides=(t>=10)?["Kuzey","Güney"]:[""];
-  sides.forEach(side=>{
-    for(let r=1;r<=6;r++){
-      let tr=document.createElement("tr");
-      tr.innerHTML=`
-        <td>${t}</td>
-        <td>${side}</td>
-        <td>${r}</td>
-        <td><input></td>
-        <td><input type="number"></td>
-      `;
-      tbody.appendChild(tr);
-    }
+function calcTotal() {
+  let total = 0;
+  document.querySelectorAll('input[type="number"]').forEach(i => {
+    total += Number(i.value || 0);
   });
+  document.getElementById("total").innerText = "Toplam Kutu: " + total;
 }
 
-// PDF
-function pdfOlustur(){
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF("p","mm","a4");
-
-  let y=15;
-  let toplam=0;
-
-  doc.setFont("helvetica","normal");
-  doc.setFontSize(12);
-  doc.text("Domates Serasi Hasat Kaydi",10,y);
-  y+=8;
-
-  doc.setFontSize(9);
-  doc.text("Tunel",10,y);
-  doc.text("Yon",25,y);
-  doc.text("Sira",45,y);
-  doc.text("Personel",60,y);
-  doc.text("Kutu",140,y);
-  y+=5;
-  doc.line(10,y,200,y);
-  y+=4;
-
-  document.querySelectorAll("tbody tr").forEach(tr=>{
-    const td=tr.querySelectorAll("td");
-    const personel=td[3].querySelector("input").value;
-    const kutu=parseInt(td[4].querySelector("input").value)||0;
-
-    if(personel!=="" || kutu>0){
-      doc.text(td[0].innerText,10,y);
-      doc.text(trFix(td[1].innerText),25,y);
-      doc.text(td[2].innerText,45,y);
-      doc.text(trFix(personel),60,y);
-      doc.text(kutu.toString(),140,y);
-
-      toplam+=kutu;
-      y+=6;
-
-      if(y>280){
-        doc.addPage();
-        y=15;
-      }
-    }
-  });
-
-  doc.line(10,y,200,y);
-  y+=8;
-  doc.setFontSize(11);
-  doc.text(`TOPLAM KUTU: ${toplam}`,10,y);
-
-  const pdfBlob = doc.output("blob");
-
-if (navigator.share) {
-  const file = new File([pdfBlob], "hasat_kaydi.pdf", { type: "application/pdf" });
-  navigator.share({
-    files: [file],
-    title: "Hasat Kaydı",
-    text: "Günlük hasat kaydı PDF"
-  });
-} else {
-  const url = URL.createObjectURL(pdfBlob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "hasat_kaydi.pdf";
-  a.click();
-  URL.revokeObjectURL(url);
+function downloadPDF() {
+  window.print();
 }
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
 }
 </script>
-
 </body>
 </html>
