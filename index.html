@@ -2,22 +2,30 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Hasat Takip</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon.png">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
 <style>
-body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
+body{font-family:Arial,sans-serif;background:#f4f6f8;margin:0;padding:10px}
 h1{text-align:center;color:#2e7d32}
 button{width:100%;padding:12px;margin-top:8px;font-size:16px;background:#2e7d32;color:#fff;border:none;border-radius:6px;cursor:pointer}
-button.gray{background:#607d8b}
 button.blue{background:#1976d2}
+button.gray{background:#607d8b}
 button.red{background:#c62828}
+button.pdf{background:#f44336}
 .section{background:#fff;padding:10px;margin-top:8px;border-radius:6px;border:1px solid #ddd}
 .hidden{display:none}
 table{width:100%;border-collapse:collapse;background:#fff;margin-top:8px}
-th,td{border:1px solid #ccc;padding:6px;text-align:center}
-th{background:#e8f5e9;color:#2e7d32}
-select,input{width:95%;padding:6px}
-#total{text-align:center;font-size:18px;font-weight:bold;margin-top:10px;padding:10px;background:#fff}
+th,td{border:1px solid #ccc;padding:8px;text-align:center}
+th{background:#e8f5e9}
+select{width:95%;padding:8px;font-size:14px}
+#total{text-align:center;font-size:18px;font-weight:bold;margin:10px 0;padding:10px;background:#fff}
 </style>
 </head>
 <body>
@@ -26,31 +34,30 @@ select,input{width:95%;padding:6px}
 
 <button class="gray" onclick="togglePersonel()">👥 Personel Yönetimi</button>
 <div id="personelPanel" class="section hidden">
-  <input id="newPersonel" placeholder="İsim Soyisim">
-  <button onclick="addPersonel()">➕ Ekle</button>
-  <div id="personelList"></div>
+    <input id="newPersonel" style="width:70%;padding:10px" placeholder="İsim Soyisim">
+    <button onclick="addPersonel()" style="width:25%">➕ Ekle</button>
+    <div id="personelList" style="margin-top:10px"></div>
 </div>
 
 <button class="blue" onclick="location.href='olu-bitki.html'">🌿 Ölü Bitki Takibe Geç</button>
 
 <table id="table">
-<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kutu</th></tr>
+    <thead><tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kutu</th></tr></thead>
+    <tbody id="tableBody"></tbody>
 </table>
 
 <div id="total">Toplam Kutu: 0</div>
 
 <div class="section">
+    <button class="pdf" onclick="generatePDF()">📄 Tabloyu PDF Yap (Paylaş)</button>
     <button class="blue" onclick="finishDay()">💾 Günü Bitir ve Arşivle</button>
-    <button class="gray" onclick="downloadReport()">📊 Raporu İndir (Excel)</button>
+    <button class="gray" onclick="downloadReport()">📊 Eski Kayıtları Excel İndir</button>
 </div>
 
 <button class="red" onclick="clearPage()">🗑️ Sayfayı Temizle</button>
 
 <script>
-const PERSONEL_KEY="sera_personeller";
-const DATA_KEY="hasat_kayitlar";
-const HISTORY_KEY="genel_is_gecmisi";
-
+const PERSONEL_KEY="sera_personeller", DATA_KEY="hasat_kayitlar", HISTORY_KEY="genel_is_gecmisi";
 const defaultP=["Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime","Fatma Demiral","Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop","Keziban tasoluk","Keziban yüce","Keziban yüksek","Meryem","Müjgan","Mümine","Neslihan","Özgül","Raziye koçak","Raziye sarı","Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya","Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral","Ummuhan özdemir","Yaşar"];
 
 let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||defaultP;
@@ -58,32 +65,32 @@ let data=JSON.parse(localStorage.getItem(DATA_KEY))||{};
 
 function sorted(){return [...personeller].sort((a,b)=>a.localeCompare(b,'tr'))}
 
-const table=document.getElementById("table");
-for(let t=19;t>=1;t--){
-    for(let s=1;s<=6;s++){
-        const id=`${t}-${s}`;
-        const tr=document.createElement("tr");
-        tr.dataset.id=id;
-        tr.innerHTML=`<td><b>${t}</b></td><td>${s}</td><td>${pSel(id)}</td><td>${kSel(id)}</td>`;
-        table.appendChild(tr);
+function renderTable(){
+    let h="";
+    for(let t=19;t>=1;t--){
+        for(let s=1;s<=6;s++){
+            const id=`${t}-${s}`;
+            h+=`<tr data-id="${id}"><td><b>${t}</b></td><td>${s}</td><td>${pSel(id)}</td><td>${kSel(id)}</td></tr>`;
+        }
     }
+    document.getElementById("tableBody").innerHTML=h;
+    restore();
 }
 
 function pSel(id){
-    let h=`<select onchange="save('${id}','p',this.value)"><option value="">Seç</option>`;
-    sorted().forEach(p=>h+=`<option>${p}</option>`);
-    return h+="</select>";
+    let o=`<option value="">Seç</option>`;
+    sorted().forEach(p=>o+=`<option value="${p}">${p}</option>`);
+    return `<select onchange="save('${id}','p',this.value)">${o}</select>`;
 }
 
 function kSel(id){
-    let h=`<select onchange="save('${id}','k',this.value)">`;
-    for(let i=0;i<=200;i++)h+=`<option>${i}</option>`;
-    return h+="</select>";
+    let o="";
+    for(let i=0;i<=200;i++)o+=`<option value="${i}">${i}</option>`;
+    return `<select onchange="save('${id}','k',this.value)">${o}</select>`;
 }
 
 function save(id,t,v){
-    data[id]=data[id]||{};
-    data[id][t]=v;
+    data[id]=data[id]||{}; data[id][t]=v;
     localStorage.setItem(DATA_KEY,JSON.stringify(data));
     calc();
 }
@@ -94,8 +101,43 @@ function calc(){
     document.getElementById("total").innerText="Toplam Kutu: "+sum;
 }
 
+function restore(){
+    Object.keys(data).forEach(id=>{
+        const r=document.querySelector(`tr[data-id="${id}"]`);
+        if(r){const s=r.querySelectorAll("select"); s[0].value=data[id].p||""; s[1].value=data[id].k||"0";}
+    });
+    calc();
+}
+
+// PDF OLUŞTURMA FONKSİYONU
+async function generatePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const tarih = new Date().toLocaleDateString('tr-TR');
+    
+    doc.text("Hasat Takip Raporu - " + tarih, 14, 15);
+    
+    let tableData = [];
+    Object.keys(data).forEach(id => {
+        if(data[id].p && data[id].k > 0) {
+            const [tun, sir] = id.split("-");
+            tableData.push([tun, sir, data[id].p, data[id].k]);
+        }
+    });
+
+    if(tableData.length === 0) { alert("Tablo boş, rapor oluşturulamaz!"); return; }
+
+    doc.autoTable({
+        head: [['Tünel', 'Sıra', 'Personel', 'Kutu']],
+        body: tableData,
+        startY: 20
+    });
+
+    doc.save(`Hasat_Raporu_${tarih}.pdf`);
+}
+
 function finishDay(){
-    if(!confirm("Veriler arşive eklenecek. Emin misiniz?")) return;
+    if(!confirm("Veriler arşive eklenecek ve ekran temizlenecek?")) return;
     let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
     const tarih=new Date().toLocaleDateString('tr-TR');
     Object.keys(data).forEach(id=>{
@@ -106,7 +148,7 @@ function finishDay(){
     });
     localStorage.setItem(HISTORY_KEY,JSON.stringify(history));
     data={}; localStorage.removeItem(DATA_KEY);
-    alert("Arşivlendi!"); location.reload();
+    location.reload();
 }
 
 function downloadReport(){
@@ -117,13 +159,13 @@ function downloadReport(){
     const blob=new Blob([csv],{type:'text/csv'});
     const a=document.createElement("a");
     a.href=URL.createObjectURL(blob);
-    a.download="rapor.csv"; a.click();
+    a.download="genel_arsiv.csv"; a.click();
 }
 
 function togglePersonel(){document.getElementById("personelPanel").classList.toggle("hidden"); renderPersonel();}
 function renderPersonel(){
     const d=document.getElementById("personelList"); d.innerHTML="";
-    sorted().forEach((p,i)=>d.innerHTML+=`<div>${p} <button onclick="removeP('${p}')" style="width:auto;background:red;padding:2px 5px">X</button></div>`);
+    sorted().forEach((p)=>d.innerHTML+=`<div style="display:flex;justify-content:space-between;padding:5px;border-bottom:1px solid #eee">${p} <button onclick="removeP('${p}')" style="width:auto;background:red;padding:2px 8px;margin:0">X</button></div>`);
 }
 function addPersonel(){
     const val=document.getElementById("newPersonel").value;
@@ -136,15 +178,9 @@ function removeP(p){
     localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller));
     location.reload();
 }
+function clearPage(){ if(confirm("Kaydetmeden temizle?")){ data={}; localStorage.removeItem(DATA_KEY); location.reload(); }}
 
-function restore(){
-    Object.keys(data).forEach(id=>{
-        const r=document.querySelector(`tr[data-id="${id}"]`);
-        if(r){const s=r.querySelectorAll("select"); s[0].value=data[id].p||""; s[1].value=data[id].k||"0";}
-    });
-    calc();
-}
-restore();
+renderTable();
 </script>
 </body>
 </html>
