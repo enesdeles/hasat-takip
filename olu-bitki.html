@@ -36,7 +36,8 @@ select{width:95%;padding:6px}
 <button class="red" onclick="clearPage()">🗑️ Sayfayı Temizle</button>
 
 <script>
-const PERSONEL_KEY="personeller"
+// DÜZELTME 1: index.html ile aynı anahtarı kullanıyoruz ("sera_personeller")
+const PERSONEL_KEY="sera_personeller" 
 const DATA_KEY="olu_bitki_data"
 
 const defaultPersoneller=[
@@ -49,14 +50,13 @@ const defaultPersoneller=[
 "Ummuhan özdemir","Yaşar"
 ]
 
-let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||defaultPersoneller
-localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
+// DÜZELTME 2: Eğer kayıt yoksa boş liste yerine 'defaultPersoneller'i kullan
+let personeller = JSON.parse(localStorage.getItem(PERSONEL_KEY)) || defaultPersoneller
 
 let data=JSON.parse(localStorage.getItem(DATA_KEY))||{}
+const table=document.getElementById("table")
 
 function sorted(){return [...personeller].sort((a,b)=>a.localeCompare(b,'tr'))}
-
-const table=document.getElementById("table")
 
 for(let t=19;t>=1;t--){
 for(let s=1;s<=6;s++){
@@ -64,22 +64,23 @@ const id=`${t}-${s}`
 const tr=document.createElement("tr")
 tr.dataset.id=id
 tr.innerHTML=`
-<td>${t}</td>
-<td>${s}</td>
+<td>${t}</td><td>${s}</td>
 <td>${personelSelect(id)}</td>
-<td>${kutuSelect(id)}</td>`
+<td>${countSelect(id)}</td>`
 table.appendChild(tr)
 }
 }
 
 function personelSelect(id){
-let h=`<select onchange="save('${id}','p',this.value)"><option>Seç</option>`
+// 'Seç' opsiyonu eklendi
+let h=`<select onchange="save('${id}','p',this.value)"><option value="">Seç</option>`
 sorted().forEach(p=>h+=`<option>${p}</option>`)
 return h+="</select>"
 }
 
 function countSelect(id){
 let h=`<select onchange="save('${id}','k',this.value)">`
+// Başlangıç değeri 0 olarak seçili gelsin diye ilk option boş değil 0 ile başlar
 for(let i=0;i<=500;i++)h+=`<option>${i}</option>`
 return h+="</select>"
 }
@@ -108,11 +109,19 @@ Object.values(data).forEach(r=>sum+=Number(r.k||0))
 document.getElementById("total").innerText="Toplam Kesilen Bitki: "+sum
 }
 
+function saveReport(){
+    alert("Kayıtlar tarayıcı hafızasında saklanıyor. PDF paylaş butonu ile çıktı alabilirsiniz.");
+}
+
 function clearPage(){
-if(!confirm("Temizlensin mi?"))return
+if(!confirm("Tüm veriler temizlensin mi?"))return
 data={}
 localStorage.removeItem(DATA_KEY)
-document.querySelectorAll("select").forEach(s=>s.value="")
+document.querySelectorAll("select").forEach(s=>{
+    // Seçim kutularını sıfırla (Personel boş, sayı 0)
+    if(s.options[0].innerText === "Seç") s.value = "";
+    else s.value = "0"; 
+})
 calc()
 }
 
