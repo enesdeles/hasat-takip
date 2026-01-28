@@ -6,7 +6,6 @@
 <title>Ölü Bitki Kesimi</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#c62828">
-
 <style>
 body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
 h1{text-align:center;color:#c62828}
@@ -24,7 +23,6 @@ select{width:95%;padding:6px}
 <body>
 
 <h1>🌿 Ölü Bitki Kesimi</h1>
-
 <button class="gray" onclick="window.location.href='./index.html'">⬅️ Hasat Takibe Dön</button>
 
 <table id="table">
@@ -42,19 +40,9 @@ const PERSONEL_KEY="personeller"
 const DATA_KEY="olu_bitki_data"
 const REPORT_KEY="olu_bitki_reports"
 
-const defaultPersoneller=[
-"Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime","Fatma Demiral",
-"Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop","Keziban tasoluk","Keziban yüce",
-"Keziban yüksek","Meryem","Müjgan","Mümine","Neslihan","Özgül","Raziye koçak",
-"Raziye sarı","Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya",
-"Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral","Ummuhan özdemir","Yaşar"
-]
-
-let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||defaultPersoneller
-localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
-
+let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[]
 let data=JSON.parse(localStorage.getItem(DATA_KEY))||{}
-let reports=JSON.parse(localStorage.getItem(REPORT_KEY))||[]
+let reports=JSON.parse(localStorage.getItem(REPORT_KEY))||{}
 
 const table=document.getElementById("table")
 
@@ -62,6 +50,7 @@ for(let t=19;t>=1;t--){
 for(let s=1;s<=6;s++){
 const id=`${t}-${s}`
 const tr=document.createElement("tr")
+tr.dataset.id=id
 tr.innerHTML=`
 <td>${t}</td>
 <td>${s}</td>
@@ -74,20 +63,31 @@ table.appendChild(tr)
 function personelSelect(id){
 let h=`<select onchange="save('${id}','p',this.value)">`
 h+=`<option value="">Seç</option>`
-personeller.forEach(p=>h+=`<option>${p}</option>`)
-return h+="</select>"
+personeller.sort((a,b)=>a.localeCompare(b,'tr')).forEach(p=>h+=`<option>${p}</option>`)
+return h+=`</select>`
 }
 
 function countSelect(id,max){
 let h=`<select onchange="save('${id}','k',this.value)">`
 for(let i=0;i<=max;i++)h+=`<option>${i}</option>`
-return h+="</select>"
+return h+=`</select>`
 }
 
 function save(id,key,val){
 data[id]=data[id]||{}
 data[id][key]=val
 localStorage.setItem(DATA_KEY,JSON.stringify(data))
+calc()
+}
+
+function restore(){
+Object.keys(data).forEach(id=>{
+const row=document.querySelector(`tr[data-id="${id}"]`)
+if(!row)return
+const selects=row.querySelectorAll("select")
+if(data[id].p)selects[0].value=data[id].p
+if(data[id].k)selects[1].value=data[id].k
+})
 calc()
 }
 
@@ -98,8 +98,8 @@ document.getElementById("total").innerText="Toplam Kesilen Bitki: "+sum
 }
 
 function saveReport(){
-if(!confirm("Kesim raporu kaydedilsin mi?"))return
-reports.unshift({date:new Date().toLocaleDateString("tr-TR"),data})
+const today=new Date().toLocaleDateString("tr-TR")
+reports[today]=JSON.parse(JSON.stringify(data))
 localStorage.setItem(REPORT_KEY,JSON.stringify(reports))
 alert("Ölü bitki raporu kaydedildi")
 }
@@ -112,7 +112,7 @@ document.querySelectorAll("select").forEach(s=>s.value="")
 calc()
 }
 
-calc()
+restore()
 </script>
 </body>
 </html>
