@@ -6,17 +6,113 @@
 <title>Ölü Bitki Kesimi</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#c62828">
+
+<style>
+body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
+h1{text-align:center;color:#c62828}
+button{width:100%;padding:12px;margin-top:8px;font-size:16px;background:#c62828;color:#fff;border:none;border-radius:6px}
+button.gray{background:#607d8b}
+button.red{background:#8e0000}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #ccc;padding:6px;text-align:center}
+th{background:#fdecea}
+select{width:95%;padding:6px}
+#total{text-align:center;font-size:18px;font-weight:bold;margin-top:10px}
+</style>
 </head>
 
-<body style="font-family:Arial;background:#f4f6f8;padding:10px">
+<body>
 
-<h1 style="color:#c62828;text-align:center">🌿 Ölü Bitki Kesimi</h1>
+<h1>🌿 Ölü Bitki Kesimi</h1>
 
-<button onclick="window.location.href='./index.html'">⬅️ Hasat Takibe Dön</button>
+<button class="gray" onclick="window.location.href='./index.html'">⬅️ Hasat Takibe Dön</button>
+
+<table id="table">
+<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kesilen Bitki</th></tr>
+</table>
+
+<div id="total">Toplam Kesilen Bitki: 0</div>
+
+<button onclick="saveReport()">✅ Kesimi Bitir ve Kaydet</button>
+<button onclick="window.print()">📄 PDF Paylaş</button>
+<button class="red" onclick="clearPage()">🗑️ Sayfayı Temizle</button>
 
 <script>
-document.write("<p style='text-align:center'>Bu ekran hasatla birebir aynı çalışır.<br>Kesilen bitki sayısı 0–500 arasıdır.</p>")
-</script>
+const PERSONEL_KEY="personeller"
+const DATA_KEY="olu_bitki_data"
+const REPORT_KEY="olu_bitki_reports"
 
+const defaultPersoneller=[
+"Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime","Fatma Demiral",
+"Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop","Keziban tasoluk","Keziban yüce",
+"Keziban yüksek","Meryem","Müjgan","Mümine","Neslihan","Özgül","Raziye koçak",
+"Raziye sarı","Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya",
+"Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral","Ummuhan özdemir","Yaşar"
+]
+
+let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||defaultPersoneller
+localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
+
+let data=JSON.parse(localStorage.getItem(DATA_KEY))||{}
+let reports=JSON.parse(localStorage.getItem(REPORT_KEY))||[]
+
+const table=document.getElementById("table")
+
+for(let t=19;t>=1;t--){
+for(let s=1;s<=6;s++){
+const id=`${t}-${s}`
+const tr=document.createElement("tr")
+tr.innerHTML=`
+<td>${t}</td>
+<td>${s}</td>
+<td>${personelSelect(id)}</td>
+<td>${countSelect(id,500)}</td>`
+table.appendChild(tr)
+}
+}
+
+function personelSelect(id){
+let h=`<select onchange="save('${id}','p',this.value)">`
+h+=`<option value="">Seç</option>`
+personeller.forEach(p=>h+=`<option>${p}</option>`)
+return h+="</select>"
+}
+
+function countSelect(id,max){
+let h=`<select onchange="save('${id}','k',this.value)">`
+for(let i=0;i<=max;i++)h+=`<option>${i}</option>`
+return h+="</select>"
+}
+
+function save(id,key,val){
+data[id]=data[id]||{}
+data[id][key]=val
+localStorage.setItem(DATA_KEY,JSON.stringify(data))
+calc()
+}
+
+function calc(){
+let sum=0
+Object.values(data).forEach(r=>sum+=Number(r.k||0))
+document.getElementById("total").innerText="Toplam Kesilen Bitki: "+sum
+}
+
+function saveReport(){
+if(!confirm("Kesim raporu kaydedilsin mi?"))return
+reports.unshift({date:new Date().toLocaleDateString("tr-TR"),data})
+localStorage.setItem(REPORT_KEY,JSON.stringify(reports))
+alert("Ölü bitki raporu kaydedildi")
+}
+
+function clearPage(){
+if(!confirm("Temizlensin mi?"))return
+data={}
+localStorage.removeItem(DATA_KEY)
+document.querySelectorAll("select").forEach(s=>s.value="")
+calc()
+}
+
+calc()
+</script>
 </body>
 </html>
