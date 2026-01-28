@@ -18,6 +18,18 @@ body {
 h1 {
   text-align: center;
   color: #2e7d32;
+  margin-bottom: 5px;
+}
+#tarih {
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.section {
+  background: white;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-radius: 6px;
 }
 table {
   width: 100%;
@@ -33,9 +45,9 @@ th, td {
 th {
   background: #e8f5e9;
 }
-input {
-  width: 90%;
-  padding: 4px;
+input, select {
+  width: 95%;
+  padding: 6px;
 }
 button {
   width: 100%;
@@ -47,18 +59,81 @@ button {
   border: none;
   border-radius: 6px;
 }
+button.delete {
+  background: #c62828;
+  width: auto;
+  padding: 5px 10px;
+  font-size: 14px;
+}
 #total {
   margin-top: 15px;
   font-size: 18px;
   font-weight: bold;
   text-align: center;
 }
+.personel-list div {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+/* 🖨️ PROFESYONEL PDF YAZDIRMA */
+@media print {
+  body {
+    background: white;
+    padding: 0;
+    margin: 0;
+  }
+  .section,
+  button {
+    display: none !important;
+  }
+  h1 {
+    font-size: 22px;
+  }
+  table {
+    font-size: 12px;
+  }
+  th {
+    background: #eeeeee !important;
+    color: black !important;
+  }
+  input, select {
+    border: none;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    font-size: 12px;
+  }
+  #total {
+    margin-top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    border-top: 2px solid black;
+    padding-top: 10px;
+  }
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+}
 </style>
 </head>
 
 <body>
-<h1>🌱 Hasat Takip</h1>
 
+<h1>🌱 Hasat Takip</h1>
+<div id="tarih"></div>
+
+<!-- PERSONEL YÖNETİMİ -->
+<div class="section">
+  <h3>👩‍🌾 Personel Yönetimi</h3>
+  <input id="personelInput" placeholder="İsim Soyisim">
+  <button onclick="addPersonel()">Personel Ekle</button>
+  <div class="personel-list" id="personelList"></div>
+</div>
+
+<!-- HASAT TABLOSU -->
 <table id="hasatTable">
 <tr>
   <th>Tünel</th>
@@ -73,16 +148,74 @@ button {
 <button onclick="downloadPDF()">PDF İndir</button>
 
 <script>
-const table = document.getElementById("hasatTable");
+// 📅 TARİH
+document.getElementById("tarih").innerText =
+  "Hasat Tarihi: " + new Date().toLocaleDateString("tr-TR");
 
+// 👩‍🌾 PERSONEL VERİSİ (KALICI)
+let personeller = JSON.parse(localStorage.getItem("personeller")) || [];
+
+function savePersoneller() {
+  personeller.sort((a, b) => a.localeCompare(b, "tr"));
+  localStorage.setItem("personeller", JSON.stringify(personeller));
+}
+
+function renderPersonelList() {
+  const list = document.getElementById("personelList");
+  list.innerHTML = "";
+  personeller.forEach((p, i) => {
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <span>${p}</span>
+      <button class="delete" onclick="removePersonel(${i})">Sil</button>
+    `;
+    list.appendChild(div);
+  });
+  updateAllSelects();
+}
+
+function addPersonel() {
+  const input = document.getElementById("personelInput");
+  const name = input.value.trim();
+  if (!name) return;
+  personeller.push(name);
+  input.value = "";
+  savePersoneller();
+  renderPersonelList();
+}
+
+function removePersonel(index) {
+  personeller.splice(index, 1);
+  savePersoneller();
+  renderPersonelList();
+}
+
+function createSelect() {
+  let html = `<option value="">Seç</option>`;
+  personeller.forEach(p => {
+    html += `<option value="${p}">${p}</option>`;
+  });
+  return `<select>${html}</select>`;
+}
+
+function updateAllSelects() {
+  document.querySelectorAll("td.personel").forEach(td => {
+    const current = td.querySelector("select")?.value || "";
+    td.innerHTML = createSelect();
+    td.querySelector("select").value = current;
+  });
+}
+
+// 📊 TABLO OLUŞTUR
+const table = document.getElementById("hasatTable");
 for (let t = 19; t >= 1; t--) {
   for (let s = 1; s <= 6; s++) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${t}</td>
       <td>${s}</td>
-      <td><input></td>
-      <td><input type="number" oninput="calcTotal()"></td>
+      <td class="personel">${createSelect()}</td>
+      <td><input type="number" min="0" oninput="calcTotal()"></td>
     `;
     table.appendChild(tr);
   }
@@ -100,9 +233,13 @@ function downloadPDF() {
   window.print();
 }
 
+// 🔧 SERVICE WORKER
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js');
 }
+
+renderPersonelList();
 </script>
+
 </body>
 </html>
