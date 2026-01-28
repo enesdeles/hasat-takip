@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapor</title>
+<style>
+body{font-family:Arial;background:#fff;padding:10px}
+h1{text-align:center}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border:1px solid #000;padding:6px;text-align:center}
+th{background:#eee}
+#total{margin-top:15px;font-size:18px;font-weight:bold;text-align:center}
+button{width:100%;padding:10px;margin-top:10px;font-size:15px}
+@media print{button{display:none}}
+</style>
+</head>
+
+<body>
+
+<h1 id="title"></h1>
+
+<table id="table"></table>
+<div id="total"></div>
+
+<button onclick="window.print()">📄 PDF İndir / Paylaş</button>
+
+<script>
+const REPORT_KEY="sera_raporlar";
+const params=new URLSearchParams(location.search);
+const index=params.get("i");
+
+const raporlar=JSON.parse(localStorage.getItem(REPORT_KEY))||[];
+const r=raporlar[index];
+
+title.innerText=
+(r.tip=="hasat"?"🌱 Hasat Raporu":"🍂 Ölü Bitki Raporu")+" - "+r.tarih;
+
+table.innerHTML="<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>"+(r.tip=="hasat"?"Kutu":"Adet")+"</th></tr>";
+
+let sum=0;
+Object.entries(r.data).forEach(([id,v])=>{
+const [t,s]=id.split("-");
+const val=r.tip=="hasat"?v.k:v.a;
+sum+=Number(val||0);
+table.innerHTML+=`<tr><td>${t}</td><td>${s}</td><td>${v.p||""}</td><td>${val||0}</td></tr>`;
+});
+
+total.innerText=(r.tip=="hasat"?"Toplam Kutu: ":"Toplam Kesilen Bitki: ")+sum;
+</script>
+
+</body>
+</html>
