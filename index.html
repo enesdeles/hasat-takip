@@ -18,19 +18,26 @@ body {
 h1 {
   text-align: center;
   color: #2e7d32;
-  margin-bottom: 5px;
 }
-#tarih {
-  text-align: center;
-  margin-bottom: 10px;
-  font-size: 14px;
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  font-size: 16px;
+  background: #2e7d32;
+  color: white;
+  border: none;
+  border-radius: 6px;
 }
+button.small { padding: 6px; font-size: 14px; }
+button.red { background: #c62828; }
 .section {
   background: white;
   padding: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   border-radius: 6px;
 }
+.hidden { display: none; }
 table {
   width: 100%;
   border-collapse: collapse;
@@ -40,82 +47,29 @@ th, td {
   border: 1px solid #ccc;
   padding: 6px;
   text-align: center;
-  font-size: 14px;
 }
-th {
-  background: #e8f5e9;
-}
-input, select {
-  width: 95%;
-  padding: 6px;
-}
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  background: #2e7d32;
-  color: white;
-  font-size: 16px;
-  border: none;
-  border-radius: 6px;
-}
-button.delete {
-  background: #c62828;
-  width: auto;
-  padding: 5px 10px;
-  font-size: 14px;
-}
+th { background: #e8f5e9; }
+select { width: 95%; padding: 6px; }
 #total {
   margin-top: 15px;
   font-size: 18px;
   font-weight: bold;
   text-align: center;
 }
-.personel-list div {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 5px;
-}
 
-/* 🖨️ PROFESYONEL PDF YAZDIRMA */
 @media print {
-  body {
-    background: white;
-    padding: 0;
-    margin: 0;
-  }
-  .section,
-  button {
-    display: none !important;
-  }
-  h1 {
-    font-size: 22px;
-  }
-  table {
-    font-size: 12px;
-  }
-  th {
-    background: #eeeeee !important;
-    color: black !important;
-  }
-  input, select {
+  button, .section { display: none !important; }
+  select {
     border: none;
-    background: transparent;
     appearance: none;
     -webkit-appearance: none;
-    font-size: 12px;
   }
   #total {
-    margin-top: 20px;
     font-size: 20px;
-    font-weight: bold;
     border-top: 2px solid black;
     padding-top: 10px;
   }
-  @page {
-    size: A4;
-    margin: 15mm;
-  }
+  @page { size: A4; margin: 15mm; }
 }
 </style>
 </head>
@@ -123,17 +77,15 @@ button.delete {
 <body>
 
 <h1>🌱 Hasat Takip</h1>
-<div id="tarih"></div>
 
-<!-- PERSONEL YÖNETİMİ -->
-<div class="section">
-  <h3>👩‍🌾 Personel Yönetimi</h3>
+<button class="small" onclick="togglePersonel()">👩‍🌾 Personel Yönetimi</button>
+
+<div class="section hidden" id="personelSection">
   <input id="personelInput" placeholder="İsim Soyisim">
-  <button onclick="addPersonel()">Personel Ekle</button>
-  <div class="personel-list" id="personelList"></div>
+  <button class="small" onclick="addPersonel()">Ekle</button>
+  <div id="personelList"></div>
 </div>
 
-<!-- HASAT TABLOSU -->
 <table id="hasatTable">
 <tr>
   <th>Tünel</th>
@@ -146,99 +98,122 @@ button.delete {
 <div id="total">Toplam Kutu: 0</div>
 
 <button onclick="downloadPDF()">PDF İndir</button>
+<button class="red" onclick="clearPage()">🗑️ Sayfayı Temizle</button>
 
 <script>
-// 📅 TARİH
-document.getElementById("tarih").innerText =
-  "Hasat Tarihi: " + new Date().toLocaleDateString("tr-TR");
-
-// 👩‍🌾 PERSONEL VERİSİ (KALICI)
+// PERSONEL
 let personeller = JSON.parse(localStorage.getItem("personeller")) || [];
+let kayitlar = JSON.parse(localStorage.getItem("kayitlar")) || {};
+
+function togglePersonel() {
+  document.getElementById("personelSection").classList.toggle("hidden");
+}
 
 function savePersoneller() {
-  personeller.sort((a, b) => a.localeCompare(b, "tr"));
+  personeller.sort((a,b)=>a.localeCompare(b,"tr"));
   localStorage.setItem("personeller", JSON.stringify(personeller));
 }
 
 function renderPersonelList() {
-  const list = document.getElementById("personelList");
-  list.innerHTML = "";
-  personeller.forEach((p, i) => {
-    const div = document.createElement("div");
-    div.innerHTML = `
-      <span>${p}</span>
-      <button class="delete" onclick="removePersonel(${i})">Sil</button>
-    `;
-    list.appendChild(div);
+  const div = document.getElementById("personelList");
+  div.innerHTML = "";
+  personeller.forEach((p,i)=>{
+    div.innerHTML += `
+      <div style="display:flex;justify-content:space-between">
+        ${p}
+        <button class="small red" onclick="removePersonel(${i})">Sil</button>
+      </div>`;
   });
-  updateAllSelects();
+  updateAllPersonelSelects();
 }
 
 function addPersonel() {
-  const input = document.getElementById("personelInput");
-  const name = input.value.trim();
-  if (!name) return;
-  personeller.push(name);
-  input.value = "";
+  const i=document.getElementById("personelInput");
+  if (!i.value.trim()) return;
+  personeller.push(i.value.trim());
+  i.value="";
   savePersoneller();
   renderPersonelList();
 }
 
-function removePersonel(index) {
-  personeller.splice(index, 1);
+function removePersonel(i) {
+  personeller.splice(i,1);
   savePersoneller();
   renderPersonelList();
 }
 
-function createSelect() {
-  let html = `<option value="">Seç</option>`;
-  personeller.forEach(p => {
-    html += `<option value="${p}">${p}</option>`;
-  });
-  return `<select>${html}</select>`;
+function personelSelect(id) {
+  let html=`<select onchange="saveValue('${id}','p',this.value)">`;
+  html+=`<option value="">Seç</option>`;
+  personeller.forEach(p=>html+=`<option>${p}</option>`);
+  html+=`</select>`;
+  return html;
 }
 
-function updateAllSelects() {
-  document.querySelectorAll("td.personel").forEach(td => {
-    const current = td.querySelector("select")?.value || "";
-    td.innerHTML = createSelect();
-    td.querySelector("select").value = current;
-  });
+function kutuSelect(id) {
+  let html=`<select onchange="saveValue('${id}','k',this.value);calcTotal()">`;
+  for(let i=0;i<=200;i++) html+=`<option>${i}</option>`;
+  html+=`</select>`;
+  return html;
 }
 
-// 📊 TABLO OLUŞTUR
-const table = document.getElementById("hasatTable");
-for (let t = 19; t >= 1; t--) {
-  for (let s = 1; s <= 6; s++) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+function saveValue(id,type,val) {
+  kayitlar[id]=kayitlar[id]||{};
+  kayitlar[id][type]=val;
+  localStorage.setItem("kayitlar",JSON.stringify(kayitlar));
+}
+
+function restoreValue(id,type) {
+  return kayitlar[id]?.[type] || "";
+}
+
+// TABLO
+const table=document.getElementById("hasatTable");
+for(let t=19;t>=1;t--){
+  for(let s=1;s<=6;s++){
+    const id=`${t}-${s}`;
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
       <td>${t}</td>
       <td>${s}</td>
-      <td class="personel">${createSelect()}</td>
-      <td><input type="number" min="0" oninput="calcTotal()"></td>
-    `;
+      <td>${personelSelect(id)}</td>
+      <td>${kutuSelect(id)}</td>`;
     table.appendChild(tr);
+
+    tr.querySelector("td:nth-child(3) select").value=restoreValue(id,"p");
+    tr.querySelector("td:nth-child(4) select").value=restoreValue(id,"k");
   }
 }
 
-function calcTotal() {
-  let total = 0;
-  document.querySelectorAll('input[type="number"]').forEach(i => {
-    total += Number(i.value || 0);
+function updateAllPersonelSelects(){
+  document.querySelectorAll("td:nth-child(3) select").forEach((s,i)=>{
+    const id=Object.keys(kayitlar)[i];
+    const val=s.value;
+    s.innerHTML=`<option value="">Seç</option>`+
+      personeller.map(p=>`<option>${p}</option>`).join("");
+    s.value=val;
   });
-  document.getElementById("total").innerText = "Toplam Kutu: " + total;
 }
 
-function downloadPDF() {
-  window.print();
+function calcTotal(){
+  let total=0;
+  document.querySelectorAll("td:nth-child(4) select")
+    .forEach(s=>total+=Number(s.value));
+  document.getElementById("total").innerText="Toplam Kutu: "+total;
 }
 
-// 🔧 SERVICE WORKER
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js');
+function clearPage(){
+  if(!confirm("Tüm hasat verileri silinsin mi?")) return;
+  kayitlar={};
+  localStorage.removeItem("kayitlar");
+  document.querySelectorAll("select").forEach(s=>s.value="");
+  calcTotal();
 }
+
+function downloadPDF(){ window.print(); }
 
 renderPersonelList();
+calcTotal();
 </script>
 
 </body>
