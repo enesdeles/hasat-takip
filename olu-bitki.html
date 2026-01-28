@@ -39,6 +39,16 @@ select{width:95%;padding:6px}
 const PERSONEL_KEY="personeller"
 const DATA_KEY="olu_bitki_data"
 
+const defaultPersoneller=[
+"Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime",
+"Fatma Demiral","Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop",
+"Keziban tasoluk","Keziban yüce","Keziban yüksek","Meryem","Müjgan",
+"Mümine","Neslihan","Özgül","Raziye koçak","Raziye sarı",
+"Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya",
+"Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral",
+"Ummuhan özdemir","Yaşar"
+]
+
 let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[]
 let data=JSON.parse(localStorage.getItem(DATA_KEY))||{}
 const table=document.getElementById("table")
