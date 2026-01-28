@@ -10,6 +10,7 @@ body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
 h1{text-align:center;color:#c62828}
 button{width:100%;padding:10px;margin-top:6px;font-size:15px;border:none;border-radius:6px;background:#c62828;color:#fff}
 .gray{background:#607d8b}
+.red{background:#000}
 table{width:100%;border-collapse:collapse;background:#fff}
 th,td{border:1px solid #ccc;padding:5px;text-align:center}
 th{background:#ffebee}
@@ -21,31 +22,52 @@ select{width:95%;padding:5px}
 <h1>🍂 Ölü Bitki Takip</h1>
 
 <button class="gray" onclick="location.href='index.html'">🌱 Hasat Takip</button>
+<button class="red" onclick="clearDead()">🗑️ Sayfayı Temizle</button>
 
 <table id="table"></table>
 
 <script>
 const PERSONEL_KEY="sera_personeller";
+const DEAD_KEY="olu_bitki_devam";
+
 const personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[];
+let data=JSON.parse(localStorage.getItem(DEAD_KEY))||{};
 
 const table=document.getElementById("table");
 table.innerHTML="<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Adet</th></tr>";
 
 for(let t=19;t>=1;t--){
 for(let s=1;s<=6;s++){
+const id=`${t}-${s}`;
+const row=data[id]||{};
 table.innerHTML+=`
 <tr>
 <td>${t}</td><td>${s}</td>
 <td>
-<select>
-<option></option>${personeller.map(p=>`<option>${p}</option>`).join("")}
+<select onchange="setVal('${id}','p',this.value)">
+<option></option>${personeller.map(p=>`<option ${row.p===p?"selected":""}>${p}</option>`).join("")}
 </select>
 </td>
 <td>
-<select>${Array.from({length:101},(_,i)=>`<option>${i}</option>`)}</select>
+<select onchange="setVal('${id}','a',this.value)">
+${Array.from({length:501},(_,i)=>`<option ${row.a==i?"selected":""}>${i}</option>`).join("")}
+</select>
 </td>
 </tr>`;
 }}
+
+function setVal(id,k,v){
+data[id]=data[id]||{};
+data[id][k]=v;
+localStorage.setItem(DEAD_KEY,JSON.stringify(data));
+}
+
+function clearDead(){
+if(!confirm("Ölü bitki verileri silinsin mi?"))return;
+data={};
+localStorage.removeItem(DEAD_KEY);
+location.reload();
+}
 </script>
 </body>
 </html>
