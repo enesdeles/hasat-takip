@@ -38,13 +38,12 @@ select{width:95%;padding:6px}
 <script>
 const PERSONEL_KEY="personeller"
 const DATA_KEY="olu_bitki_data"
-const REPORT_KEY="olu_bitki_reports"
 
 let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[]
 let data=JSON.parse(localStorage.getItem(DATA_KEY))||{}
-let reports=JSON.parse(localStorage.getItem(REPORT_KEY))||{}
-
 const table=document.getElementById("table")
+
+function sorted(){return [...personeller].sort((a,b)=>a.localeCompare(b,'tr'))}
 
 for(let t=19;t>=1;t--){
 for(let s=1;s<=6;s++){
@@ -52,41 +51,39 @@ const id=`${t}-${s}`
 const tr=document.createElement("tr")
 tr.dataset.id=id
 tr.innerHTML=`
-<td>${t}</td>
-<td>${s}</td>
+<td>${t}</td><td>${s}</td>
 <td>${personelSelect(id)}</td>
-<td>${countSelect(id,500)}</td>`
+<td>${countSelect(id)}</td>`
 table.appendChild(tr)
 }
 }
 
 function personelSelect(id){
-let h=`<select onchange="save('${id}','p',this.value)">`
-h+=`<option value="">Seç</option>`
-personeller.sort((a,b)=>a.localeCompare(b,'tr')).forEach(p=>h+=`<option>${p}</option>`)
-return h+=`</select>`
+let h=`<select onchange="save('${id}','p',this.value)"><option></option>`
+sorted().forEach(p=>h+=`<option>${p}</option>`)
+return h+="</select>"
 }
 
-function countSelect(id,max){
+function countSelect(id){
 let h=`<select onchange="save('${id}','k',this.value)">`
-for(let i=0;i<=max;i++)h+=`<option>${i}</option>`
-return h+=`</select>`
+for(let i=0;i<=500;i++)h+=`<option>${i}</option>`
+return h+="</select>"
 }
 
-function save(id,key,val){
+function save(id,k,v){
 data[id]=data[id]||{}
-data[id][key]=val
+data[id][k]=v
 localStorage.setItem(DATA_KEY,JSON.stringify(data))
 calc()
 }
 
 function restore(){
 Object.keys(data).forEach(id=>{
-const row=document.querySelector(`tr[data-id="${id}"]`)
-if(!row)return
-const selects=row.querySelectorAll("select")
-if(data[id].p)selects[0].value=data[id].p
-if(data[id].k)selects[1].value=data[id].k
+const r=document.querySelector(`tr[data-id="${id}"]`)
+if(!r)return
+const s=r.querySelectorAll("select")
+if(data[id].p)s[0].value=data[id].p
+if(data[id].k)s[1].value=data[id].k
 })
 calc()
 }
@@ -95,13 +92,6 @@ function calc(){
 let sum=0
 Object.values(data).forEach(r=>sum+=Number(r.k||0))
 document.getElementById("total").innerText="Toplam Kesilen Bitki: "+sum
-}
-
-function saveReport(){
-const today=new Date().toLocaleDateString("tr-TR")
-reports[today]=JSON.parse(JSON.stringify(data))
-localStorage.setItem(REPORT_KEY,JSON.stringify(reports))
-alert("Ölü bitki raporu kaydedildi")
 }
 
 function clearPage(){
