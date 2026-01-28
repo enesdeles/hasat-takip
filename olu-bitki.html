@@ -211,30 +211,35 @@ const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbzhHc-1KnOpQyA
 
 async function sendToGoogleSheets() {
     let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
-    if(history.length === 0) { 
-        alert("Gönderilecek veri yok! Önce 'Günü Bitir' butonuna basarak verileri arşive almalısınız."); 
+    
+    // SADECE ÖLÜ BİTKİ VERİLERİNİ SEÇ
+    let currentData = history.filter(row => row.tur === "Ölü Bitki");
+
+    if(currentData.length === 0) { 
+        alert("Gönderilecek yeni Ölü Bitki kaydı bulunamadı!"); 
         return; 
     }
 
     const btn = event.target;
-    const originalText = btn.innerText;
-    btn.innerText = "Gönderiliyor... Lütfen Bekleyin";
+    btn.innerText = "Gönderiliyor...";
     btn.disabled = true;
 
     try {
         await fetch(GOOGLE_SHEET_URL, {
             method: "POST",
             mode: "no-cors",
-            body: JSON.stringify(history)
+            body: JSON.stringify(currentData)
         });
         
-        alert("✅ Veriler Google E-Tablolara başarıyla gönderildi!");
-        // İsterseniz gönderdikten sonra arşivi temizleyebilirsiniz:
-        // localStorage.removeItem(HISTORY_KEY);
+        // BAŞARILIYSA: Sadece gönderilen Ölü Bitki verilerini sil, Hasatlar kalsın
+        let remainingData = history.filter(row => row.tur !== "Ölü Bitki");
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(remainingData));
+
+        alert("✅ Ölü Bitki verileri başarıyla gönderildi ve cihazdan temizlendi!");
     } catch (error) {
-        alert("❌ Gönderim sırasında bir hata oluştu: " + error);
+        alert("❌ Hata: " + error);
     } finally {
-        btn.innerText = originalText;
+        btn.innerText = "📊 Google E-Tablolara Gönder";
         btn.disabled = false;
     }
 }
