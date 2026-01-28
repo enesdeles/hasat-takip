@@ -49,11 +49,14 @@ const defaultPersoneller=[
 "Ummuhan özdemir","Yaşar"
 ]
 
-let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[]
+let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||defaultPersoneller
+localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
+
 let data=JSON.parse(localStorage.getItem(DATA_KEY))||{}
-const table=document.getElementById("table")
 
 function sorted(){return [...personeller].sort((a,b)=>a.localeCompare(b,'tr'))}
+
+const table=document.getElementById("table")
 
 for(let t=19;t>=1;t--){
 for(let s=1;s<=6;s++){
@@ -61,15 +64,16 @@ const id=`${t}-${s}`
 const tr=document.createElement("tr")
 tr.dataset.id=id
 tr.innerHTML=`
-<td>${t}</td><td>${s}</td>
+<td>${t}</td>
+<td>${s}</td>
 <td>${personelSelect(id)}</td>
-<td>${countSelect(id)}</td>`
+<td>${kutuSelect(id)}</td>`
 table.appendChild(tr)
 }
 }
 
 function personelSelect(id){
-let h=`<select onchange="save('${id}','p',this.value)"><option></option>`
+let h=`<select onchange="save('${id}','p',this.value)"><option>Seç</option>`
 sorted().forEach(p=>h+=`<option>${p}</option>`)
 return h+="</select>"
 }
