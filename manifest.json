@@ -1,6 +1,6 @@
 {
-  "name": "Hasat Takip",
-  "short_name": "Hasat",
+  "name": "Hasat & Ölü Bitki Takip",
+  "short_name": "Sera Takip",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
