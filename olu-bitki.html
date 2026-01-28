@@ -4,243 +4,124 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ölü Bitki Kesimi</title>
-<link rel="manifest" href="/hasat-takip/manifest.json">
-<meta name="theme-color" content="#c62828">
 <style>
-/* Tasarım ayarları */
 body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
 h1{text-align:center;color:#c62828}
 button{width:100%;padding:12px;margin-top:8px;font-size:16px;background:#c62828;color:#fff;border:none;border-radius:6px;cursor:pointer}
-button:active{opacity:0.8}
 button.gray{background:#607d8b}
 button.blue{background:#1565c0}
-button.red{background:#8e0000}
-.section{background:#fff;padding:10px;margin-top:8px;border-radius:6px;border:1px solid #ddd}
 table{width:100%;border-collapse:collapse;background:#fff;margin-top:10px}
 th,td{border:1px solid #ccc;padding:8px;text-align:center}
 th{background:#fdecea;color:#c62828}
-select{width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;background:#fff}
-#total{text-align:center;font-size:18px;font-weight:bold;margin-top:15px;padding:10px;background:#fff;border-radius:6px}
+select{width:100%;padding:8px}
+#total{text-align:center;font-size:18px;font-weight:bold;margin-top:15px;padding:10px;background:#fff}
 </style>
 </head>
-
 <body>
 
 <h1>🌿 Ölü Bitki Kesimi</h1>
 <button class="gray" onclick="window.location.href='index.html'">⬅️ Hasat Takibe Dön</button>
 
 <table id="table">
-<thead>
-    <tr>
-        <th style="width:15%">Tünel</th>
-        <th style="width:15%">Sıra</th>
-        <th>Personel</th>
-        <th style="width:20%">Adet</th>
-    </tr>
-</thead>
-<tbody id="tableBody">
-    </tbody>
+<thead><tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Adet</th></tr></thead>
+<tbody id="tableBody"></tbody>
 </table>
 
 <div id="total">Toplam Kesilen Bitki: 0</div>
 
-<div class="section">
-    <button class="blue" onclick="finishDay()">💾 Günü Bitir ve Veriyi Arşivle</button>
-    <button class="gray" onclick="downloadReport()">📊 Tüm Geçmiş Raporu İndir (Excel)</button>
+<div style="background:#fff; padding:10px; margin-top:10px; border-radius:6px; border:1px solid #ddd">
+    <button class="blue" onclick="finishDay()">💾 Günü Bitir ve Arşivle</button>
+    <button class="gray" onclick="downloadReport()">📊 Raporu İndir (Excel)</button>
 </div>
 
-<button class="red" onclick="clearPage()">🗑️ Sadece Sayfayı Temizle (Kaydetmeden)</button>
-
 <script>
-// --- AYARLAR VE VERİ YÖNETİMİ ---
-
-// index.html ile aynı anahtarı kullanıyoruz
 const PERSONEL_KEY = "sera_personeller"; 
 const DATA_KEY = "olu_bitki_data";
-const HISTORY_KEY = "genel_is_gecmisi"; // Ortak rapor havuzu
+const HISTORY_KEY = "genel_is_gecmisi";
 
-// Eğer hafızada liste yoksa kullanılacak yedek liste
-const defaultPersoneller = [
-"Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime",
-"Fatma Demiral","Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop",
-"Keziban tasoluk","Keziban yüce","Keziban yüksek","Meryem","Müjgan",
-"Mümine","Neslihan","Özgül","Raziye koçak","Raziye sarı",
-"Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya",
-"Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral",
-"Ummuhan özdemir","Yaşar"
-];
+const defaultP = ["Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime","Fatma Demiral","Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop","Keziban tasoluk","Keziban yüce","Keziban yüksek","Meryem","Müjgan","Mümine","Neslihan","Özgül","Raziye koçak","Raziye sarı","Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya","Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral","Ummuhan özdemir","Yaşar"];
 
-// Personel listesini çek
-let personeller = [];
-try {
-    const stored = localStorage.getItem(PERSONEL_KEY);
-    personeller = stored ? JSON.parse(stored) : defaultPersoneller;
-} catch (e) {
-    personeller = defaultPersoneller;
-}
-
-// Kayıtlı verileri çek
+let personeller = JSON.parse(localStorage.getItem(PERSONEL_KEY)) || defaultP;
 let data = JSON.parse(localStorage.getItem(DATA_KEY)) || {};
 
-const tableBody = document.getElementById("tableBody");
+function sorted() { return [...personeller].sort((a, b) => a.localeCompare(b, 'tr')); }
 
-function sorted() {
-    return [...personeller].sort((a, b) => a.localeCompare(b, 'tr'));
-}
-
-// --- TABLO OLUŞTURMA ---
 function renderTable() {
-    let htmlContent = "";
+    let h = "";
     for(let t = 19; t >= 1; t--) {
         for(let s = 1; s <= 6; s++) {
             const id = `${t}-${s}`;
-            htmlContent += `
-            <tr data-id="${id}">
-                <td><b>${t}</b></td>
-                <td>${s}</td>
-                <td>${createPersonelSelect(id)}</td>
-                <td>${createCountSelect(id)}</td>
-            </tr>`;
+            h += `<tr data-id="${id}"><td><b>${t}</b></td><td>${s}</td><td>${pSel(id)}</td><td>${kSel(id)}</td></tr>`;
         }
     }
-    tableBody.innerHTML = htmlContent;
-    restoreValues();
+    document.getElementById("tableBody").innerHTML = h;
+    restore();
 }
 
-function createPersonelSelect(id) {
-    let options = `<option value="">Seçiniz</option>`;
-    sorted().forEach(p => {
-        options += `<option value="${p}">${p}</option>`;
-    });
-    return `<select onchange="save('${id}', 'p', this.value)">${options}</select>`;
+function pSel(id) {
+    let o = `<option value="">Seçiniz</option>`;
+    sorted().forEach(p => o += `<option value="${p}">${p}</option>`);
+    return `<select onchange="save('${id}','p',this.value)">${o}</select>`;
 }
 
-function createCountSelect(id) {
-    let options = "";
-    for(let i = 0; i <= 500; i++) {
-        options += `<option value="${i}">${i}</option>`;
-    }
-    return `<select onchange="save('${id}', 'k', this.value)">${options}</select>`;
+function kSel(id) {
+    let o = "";
+    for(let i = 0; i <= 500; i++) o += `<option value="${i}">${i}</option>`;
+    return `<select onchange="save('${id}','k',this.value)">${o}</select>`;
 }
 
-// --- KAYIT VE İŞLEMLER ---
-
-function save(id, type, value) {
-    if (!data[id]) data[id] = {};
-    data[id][type] = value;
-    
-    if (value === "" || value === "0") {
-        if (type === 'p' && value === "") delete data[id].p;
-        if (type === 'k' && value === "0") delete data[id].k;
-        if (Object.keys(data[id]).length === 0) delete data[id];
-    }
-
+function save(id, t, v) {
+    data[id] = data[id] || {};
+    data[id][t] = v;
     localStorage.setItem(DATA_KEY, JSON.stringify(data));
-    calc();
-}
-
-function restoreValues() {
-    Object.keys(data).forEach(id => {
-        const row = document.querySelector(`tr[data-id="${id}"]`);
-        if (row) {
-            const selects = row.querySelectorAll("select");
-            if (data[id].p) selects[0].value = data[id].p;
-            if (data[id].k) selects[1].value = data[id].k;
-        }
-    });
     calc();
 }
 
 function calc() {
     let sum = 0;
-    Object.values(data).forEach(item => {
-        sum += Number(item.k || 0);
-    });
+    Object.values(data).forEach(i => sum += Number(i.k || 0));
     document.getElementById("total").innerText = "Toplam Kesilen Bitki: " + sum;
 }
 
-// --- RAPORLAMA VE ARŞİV SİSTEMİ ---
-
-function finishDay() {
-    if(Object.keys(data).length === 0) {
-        alert("Kaydedilecek veri yok!");
-        return;
-    }
-    
-    if(!confirm("Günü bitirmek üzeresiniz.\n\nVeriler 'Ölü Bitki' olarak arşive eklenecek ve tablo temizlenecek.\n\nOnaylıyor musunuz?")) return;
-
-    let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
-    const bugun = new Date().toLocaleDateString('tr-TR');
-    const saat = new Date().toLocaleTimeString('tr-TR');
-
-    Object.keys(data).forEach(id => {
-        const item = data[id];
-        if(item.p && item.k && item.k != "0") {
-            const [tunel, sira] = id.split("-");
-            history.push({
-                tarih: bugun,
-                saat: saat,
-                tur: "Ölü Bitki", // İŞ TÜRÜ FARKLI
-                personel: item.p,
-                tunel: tunel,
-                sira: sira,
-                adet: item.k
-            });
+function finishDay(){
+    if(!confirm("Veriler Ölü Bitki olarak arşive eklenecek. Emin misiniz?")) return;
+    let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
+    const tarih=new Date().toLocaleDateString('tr-TR');
+    Object.keys(data).forEach(id=>{
+        if(data[id].p && data[id].k > 0){
+            const [tun,sir]=id.split("-");
+            history.push({tarih, tur:"Ölü Bitki", p:data[id].p, t:tun, s:sir, a:data[id].k});
         }
     });
-
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-
-    data = {};
-    localStorage.removeItem(DATA_KEY);
-    document.querySelectorAll("select").forEach(el => {
-        if (el.options[0].text === "Seçiniz") el.value = "";
-        else el.value = "0";
-    });
-    calc();
-
-    alert("✅ Veriler arşive eklendi.");
+    localStorage.setItem(HISTORY_KEY,JSON.stringify(history));
+    data={}; localStorage.removeItem(DATA_KEY);
+    alert("Arşivlendi!"); location.reload();
 }
 
-function downloadReport() {
-    let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
-    if(history.length === 0) {
-        alert("Henüz kaydedilmiş bir geçmiş rapor yok.");
-        return;
-    }
-
-    let csvContent = "\uFEFFTarih;Saat;İş Türü;Personel;Tünel;Sıra;Miktar\n";
-
-    history.forEach(row => {
-        csvContent += `${row.tarih};${row.saat};${row.tur};${row.personel};${row.tunel};${row.sira};${row.adet}\n`;
-    });
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "genel_rapor_" + new Date().toLocaleDateString('tr-TR') + ".csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+function downloadReport(){
+    let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
+    if(!history.length){alert("Rapor yok!"); return;}
+    let csv="\uFEFFTarih;İş Türü;Personel;Tünel;Sıra;Adet\n";
+    history.forEach(r=>csv+=`${r.tarih};${r.tur};${r.p};${r.t};${r.s};${r.a}\n`);
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="rapor.csv"; a.click();
 }
 
-function clearPage() {
-    if(!confirm("DİKKAT: Veriler kaydedilmeden silinecek! Emin misiniz?")) return;
-    
-    data = {};
-    localStorage.removeItem(DATA_KEY);
-    
-    document.querySelectorAll("select").forEach((el) => {
-        if (el.options[0].text === "Seçiniz") el.value = "";
-        else el.value = "0";
+function restore() {
+    Object.keys(data).forEach(id => {
+        const row = document.querySelector(`tr[data-id="${id}"]`);
+        if (row) {
+            const s = row.querySelectorAll("select");
+            s[0].value = data[id].p || "";
+            s[1].value = data[id].k || "0";
+        }
     });
-    
     calc();
 }
 
 renderTable();
-
 </script>
 </body>
 </html>
