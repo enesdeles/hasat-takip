@@ -176,33 +176,36 @@ function downloadReport(){
     document.body.removeChild(a);
 }
 
-const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycby3vpGSGGHkU5_gYM3NpfUwk6J05qNWZpHsTA0-ZYWlOcdHFkX9nJU20VaLbRyMSd7Phw/exec";
+// BURAYA KENDİ GOOGLE SCRIPT URL'NİZİ YAPIŞTIRIN
+const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbwUnElrDKRl5qGlXp-EoE8k7z_H6FbtvX0d24gDTsm6-Zb9fEn0N-zwvJ3r7kmDiPh6SA/exec"; 
 
 async function sendToGoogleSheets() {
     let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
-    if(history.length === 0) { alert("Gönderilecek veri yok!"); return; }
+    if(history.length === 0) { 
+        alert("Gönderilecek veri yok! Önce 'Günü Bitir' butonuna basarak verileri arşive almalısınız."); 
+        return; 
+    }
 
-    const button = event.target;
-    button.innerText = "Gönderiliyor...";
-    button.disabled = true;
+    const btn = event.target;
+    const originalText = btn.innerText;
+    btn.innerText = "Gönderiliyor... Lütfen Bekleyin";
+    btn.disabled = true;
 
     try {
-        const response = await fetch(GOOGLE_SHEET_URL, {
+        await fetch(GOOGLE_SHEET_URL, {
             method: "POST",
-            mode: "no-cors", // Güvenlik kısıtlamasını aşmak için
-            cache: "no-cache",
+            mode: "no-cors",
             body: JSON.stringify(history)
         });
         
         alert("✅ Veriler Google E-Tablolara başarıyla gönderildi!");
-        // Gönderilen verileri arşivden silmek isterseniz:
-        // localStorage.removeItem(HISTORY_KEY); 
+        // İsterseniz gönderdikten sonra arşivi temizleyebilirsiniz:
+        // localStorage.removeItem(HISTORY_KEY);
     } catch (error) {
-        console.error(error);
-        alert("❌ Bir hata oluştu.");
+        alert("❌ Gönderim sırasında bir hata oluştu: " + error);
     } finally {
-        button.innerText = "📊 Google E-Tablolara Gönder";
-        button.disabled = false;
+        btn.innerText = originalText;
+        btn.disabled = false;
     }
 }
 
@@ -228,6 +231,7 @@ renderTable();
 </script>
 </body>
 </html>
+
 
 
 
