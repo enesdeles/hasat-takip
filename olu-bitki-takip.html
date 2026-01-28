@@ -4,110 +4,48 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ölü Bitki Takip</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#6a1b9a">
-
+<meta name="theme-color" content="#c62828">
 <style>
 body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
-h1{text-align:center;color:#6a1b9a}
-button{width:100%;padding:12px;margin-top:8px;font-size:16px;background:#6a1b9a;color:#fff;border:none;border-radius:6px}
-button.small{padding:6px;font-size:14px}
-button.red{background:#c62828}
-.section{background:#fff;padding:10px;margin-bottom:10px;border-radius:6px}
-.hidden{display:none}
+h1{text-align:center;color:#c62828}
+button{width:100%;padding:10px;margin-top:6px;font-size:15px;border:none;border-radius:6px;background:#c62828;color:#fff}
+.gray{background:#607d8b}
 table{width:100%;border-collapse:collapse;background:#fff}
-th,td{border:1px solid #ccc;padding:6px;text-align:center}
-th{background:#ede7f6}
-select{width:95%;padding:6px}
-#total{text-align:center;font-size:18px;font-weight:bold;margin-top:10px}
-@media print{
-button,.section{display:none}
-select{border:none;appearance:none}
-#total{font-size:20px;border-top:2px solid #000;padding-top:10px}
-}
+th,td{border:1px solid #ccc;padding:5px;text-align:center}
+th{background:#ffebee}
+select{width:95%;padding:5px}
 </style>
 </head>
 
 <body>
+<h1>🍂 Ölü Bitki Takip</h1>
 
-<h1>🌿 Ölü / Kesilen Bitki Takibi</h1>
+<button class="gray" onclick="location.href='index.html'">🌱 Hasat Takip</button>
 
-<button onclick="location.href='index.html'">
-🌱 Hasat Takibe Geri Dön
-</button>
-
-<table id="table">
-<tr>
-<th>Tünel</th>
-<th>Sıra</th>
-<th>Personel</th>
-<th>Kesilen Bitki</th>
-</tr>
-</table>
-
-<div id="total">Toplam Kesilen Bitki: 0</div>
-<button onclick="window.print()">PDF İndir</button>
-<button class="red" onclick="clearPage()">🗑️ Sayfayı Temizle</button>
+<table id="table"></table>
 
 <script>
 const PERSONEL_KEY="sera_personeller";
-const DATA_KEY="olu_bitki_kayitlar";
+const personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[];
 
-let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[];
-let kayitlar=JSON.parse(localStorage.getItem(DATA_KEY))||{};
+const table=document.getElementById("table");
+table.innerHTML="<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Adet</th></tr>";
 
-function personelSelect(id){
-let h=`<select onchange="saveValue('${id}','p',this.value)">`
-h+=`<option value="">Seç</option>`
-personeller.forEach(p=>h+=`<option>${p}</option>`)
-h+=`</select>`
-return h
-}
-
-function bitkiSelect(id){
-let h=`<select onchange="saveValue('${id}','b',this.value);calc()">`
-for(let i=0;i<=500;i++)h+=`<option>${i}</option>`
-h+=`</select>`
-return h
-}
-
-function saveValue(id,t,v){
-kayitlar[id]=kayitlar[id]||{}
-kayitlar[id][t]=v
-localStorage.setItem(DATA_KEY,JSON.stringify(kayitlar))
-}
-
-function restore(id,t){return kayitlar[id]?.[t]||""}
-
-const table=document.getElementById("table")
 for(let t=19;t>=1;t--){
 for(let s=1;s<=6;s++){
-const id=`${t}-${s}`
-const tr=document.createElement("tr")
-tr.innerHTML=`<td>${t}</td><td>${s}</td>
-<td>${personelSelect(id)}</td>
-<td>${bitkiSelect(id)}</td>`
-table.appendChild(tr)
-tr.querySelector("td:nth-child(3) select").value=restore(id,"p")
-tr.querySelector("td:nth-child(4) select").value=restore(id,"b")
-}
-}
-
-function calc(){
-let t=0
-document.querySelectorAll("td:nth-child(4) select").forEach(s=>t+=Number(s.value))
-document.getElementById("total").innerText="Toplam Kesilen Bitki: "+t
-}
-
-function clearPage(){
-if(!confirm("Tüm kayıtlar silinsin mi?"))return
-kayitlar={}
-localStorage.removeItem(DATA_KEY)
-document.querySelectorAll("select").forEach(s=>s.value="")
-calc()
-}
-
-calc()
+table.innerHTML+=`
+<tr>
+<td>${t}</td><td>${s}</td>
+<td>
+<select>
+<option></option>${personeller.map(p=>`<option>${p}</option>`).join("")}
+</select>
+</td>
+<td>
+<select>${Array.from({length:101},(_,i)=>`<option>${i}</option>`)}</select>
+</td>
+</tr>`;
+}}
 </script>
 </body>
 </html>
