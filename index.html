@@ -19,14 +19,10 @@ button.red{background:#c62828}
 table{width:100%;border-collapse:collapse;background:#fff}
 th,td{border:1px solid #ccc;padding:6px;text-align:center}
 th{background:#e8f5e9}
-select{width:95%;padding:6px}
+select,input{width:95%;padding:6px}
 #total{text-align:center;font-size:18px;font-weight:bold;margin-top:10px}
 .report{border-bottom:1px solid #ccc;padding:6px}
-@media print{
-button,.section{display:none}
-select{border:none;appearance:none}
-#total{font-size:20px;border-top:2px solid #000;padding-top:10px}
-}
+.personel-item{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
 </style>
 </head>
 
@@ -35,8 +31,17 @@ select{border:none;appearance:none}
 <h1>🌱 Hasat Takip</h1>
 
 <button onclick="location.href='olu-bitki-takip.html'">🌿 Ölü Bitki Takibe Geç</button>
+<button class="gray" onclick="togglePersonel()">👩‍🌾 Personel Yönetimi</button>
 <button class="gray" onclick="toggleReports()">📁 Kaydedilen Raporlar</button>
 
+<!-- PERSONEL -->
+<div class="section hidden" id="personelSection">
+  <input id="personelInput" placeholder="İsim Soyisim">
+  <button onclick="addPersonel()">➕ Personel Ekle</button>
+  <div id="personelList"></div>
+</div>
+
+<!-- RAPORLAR -->
 <div class="section hidden" id="reportsSection"></div>
 
 <table id="table">
@@ -58,17 +63,51 @@ let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[]
 let kayitlar=JSON.parse(localStorage.getItem(DATA_KEY))||{}
 let raporlar=JSON.parse(localStorage.getItem(REPORT_KEY))||[]
 
-function today(){
-const d=new Date()
-return d.toLocaleDateString("tr-TR")
+/* PERSONEL */
+function togglePersonel(){
+document.getElementById("personelSection").classList.toggle("hidden")
+renderPersonel()
 }
+
+function addPersonel(){
+const v=document.getElementById("personelInput").value.trim()
+if(!v)return
+if(personeller.includes(v))return
+personeller.push(v)
+personeller.sort((a,b)=>a.localeCompare(b,"tr"))
+localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
+document.getElementById("personelInput").value=""
+renderPersonel()
+renderTable()
+}
+
+function deletePersonel(i){
+personeller.splice(i,1)
+localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
+renderPersonel()
+renderTable()
+}
+
+function renderPersonel(){
+const d=document.getElementById("personelList")
+d.innerHTML=""
+personeller.forEach((p,i)=>{
+d.innerHTML+=`
+<div class="personel-item">
+<span>${p}</span>
+<button class="small red" onclick="deletePersonel(${i})">Sil</button>
+</div>`
+})
+}
+
+/* RAPOR */
+function today(){return new Date().toLocaleDateString("tr-TR")}
 
 function finishHarvest(){
 if(!confirm("Hasat raporu kaydedilsin mi?"))return
-const total=document.getElementById("total").innerText
 raporlar.unshift({
 tarih: today(),
-toplam: total,
+toplam: document.getElementById("total").innerText,
 veri: JSON.parse(JSON.stringify(kayitlar))
 })
 localStorage.setItem(REPORT_KEY,JSON.stringify(raporlar))
@@ -84,34 +123,30 @@ renderReports()
 function renderReports(){
 const s=document.getElementById("reportsSection")
 s.innerHTML=""
-if(raporlar.length===0){
-s.innerHTML="<b>Kayıtlı rapor yok</b>"
-return
-}
+if(!raporlar.length){s.innerHTML="<b>Kayıtlı rapor yok</b>";return}
 raporlar.forEach((r,i)=>{
 s.innerHTML+=`
 <div class="report">
-<b>${r.tarih} Hasat Raporu</b><br>
-${r.toplam}
+<b>${r.tarih} Hasat Raporu</b><br>${r.toplam}
 <button class="small red" onclick="deleteReport(${i})">Sil</button>
 </div>`
 })
 }
 
 function deleteReport(i){
-if(!confirm("Bu rapor silinsin mi?"))return
+if(!confirm("Silinsin mi?"))return
 raporlar.splice(i,1)
 localStorage.setItem(REPORT_KEY,JSON.stringify(raporlar))
 renderReports()
 }
 
+/* TABLO */
 function saveValue(id,t,v){
 kayitlar[id]=kayitlar[id]||{}
 kayitlar[id][t]=v
 localStorage.setItem(DATA_KEY,JSON.stringify(kayitlar))
 calc()
 }
-
 function restore(id,t){return kayitlar[id]?.[t]||""}
 
 function personelSelect(id){
@@ -127,7 +162,9 @@ for(let i=0;i<=200;i++)h+=`<option>${i}</option>`
 return h+="</select>"
 }
 
+function renderTable(){
 const table=document.getElementById("table")
+table.innerHTML=`<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kutu</th></tr>`
 for(let t=19;t>=1;t--){
 for(let s=1;s<=6;s++){
 const id=`${t}-${s}`
@@ -138,7 +175,8 @@ tr.innerHTML=`<td>${t}</td><td>${s}</td>
 table.appendChild(tr)
 tr.children[2].querySelector("select").value=restore(id,"p")
 tr.children[3].querySelector("select").value=restore(id,"k")
-}
+}}
+calc()
 }
 
 function calc(){
@@ -151,11 +189,10 @@ function clearPage(){
 if(!confirm("Sayfa temizlensin mi?"))return
 kayitlar={}
 localStorage.removeItem(DATA_KEY)
-document.querySelectorAll("select").forEach(s=>s.value="")
-calc()
+renderTable()
 }
 
-calc()
+renderTable()
 </script>
 </body>
 </html>
