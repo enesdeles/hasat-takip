@@ -4,147 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ölü Bitki Kesimi</title>
-
-<style>
-body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
-h1{text-align:center;color:#c62828}
-button{width:100%;padding:12px;margin-top:8px;font-size:16px;background:#c62828;color:#fff;border:none;border-radius:6px}
-button.gray{background:#607d8b}
-button.red{background:#000}
-.section{background:#fff;padding:10px;margin-bottom:10px;border-radius:6px}
-.hidden{display:none}
-table{width:100%;border-collapse:collapse;background:#fff}
-th,td{border:1px solid #ccc;padding:6px;text-align:center}
-th{background:#ffebee}
-select,input{width:95%;padding:6px}
-#total{text-align:center;font-size:18px;font-weight:bold;margin-top:10px}
-@media print{
-button,.section{display:none}
-select{border:none;appearance:none}
-#total{font-size:20px;border-top:2px solid #000;padding-top:10px}
-}
-</style>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#c62828">
 </head>
 
-<body>
+<body style="font-family:Arial;background:#f4f6f8;padding:10px">
 
-<h1>🍂 Ölü Bitki Kesimi</h1>
+<h1 style="color:#c62828;text-align:center">🌿 Ölü Bitki Kesimi</h1>
 
-<button class="gray" onclick="location.href='index.html'">🌱 Hasat Takibe Dön</button>
-<button class="gray" onclick="togglePersonel()">👩‍🌾 Personel Yönetimi</button>
-
-<div class="section hidden" id="personelBox">
-<input id="newPersonel" placeholder="İsim Soyisim">
-<button onclick="addPersonel()">Ekle</button>
-<ul id="personelList"></ul>
-</div>
-
-<table id="table">
-<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kesilen Bitki</th></tr>
-</table>
-
-<div id="total">Toplam Kesilen Bitki: 0</div>
-
-<button onclick="finish()">✅ Kesimi Bitir & Kaydet</button>
-<button onclick="window.print()">📄 PDF İndir</button>
-<button class="red" onclick="clearAll()">🗑️ Sayfayı Temizle</button>
+<button onclick="window.location.href='./index.html'">⬅️ Hasat Takibe Dön</button>
 
 <script>
-const PERSONEL_KEY="personeller"
-const DATA_KEY="olu_bitki_data"
-
-let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[]
-let data=JSON.parse(localStorage.getItem(DATA_KEY))||{}
-
-function togglePersonel(){
-document.getElementById("personelBox").classList.toggle("hidden")
-renderPersonel()
-}
-
-function renderPersonel(){
-const ul=document.getElementById("personelList")
-ul.innerHTML=""
-personeller.sort().forEach((p,i)=>{
-ul.innerHTML+=`<li>${p} <button onclick="delPersonel(${i})">❌</button></li>`
-})
-}
-
-function addPersonel(){
-const v=document.getElementById("newPersonel").value.trim()
-if(!v)return
-personeller.push(v)
-localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
-document.getElementById("newPersonel").value=""
-renderPersonel()
-renderTable()
-}
-
-function delPersonel(i){
-if(!confirm("Silinsin mi?"))return
-personeller.splice(i,1)
-localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
-renderPersonel()
-renderTable()
-}
-
-function personelSelect(id){
-let h=`<select onchange="save('${id}','p',this.value)">`
-h+=`<option value="">Seç</option>`
-personeller.forEach(p=>h+=`<option>${p}</option>`)
-return h+="</select>"
-}
-
-function adetSelect(id){
-let h=`<select onchange="save('${id}','a',this.value)">`
-for(let i=0;i<=500;i++)h+=`<option>${i}</option>`
-return h+="</select>"
-}
-
-function save(id,t,v){
-data[id]=data[id]||{}
-data[id][t]=v
-localStorage.setItem(DATA_KEY,JSON.stringify(data))
-calc()
-}
-
-function restore(id,t){return data[id]?.[t]||""}
-
-function renderTable(){
-const table=document.getElementById("table")
-table.innerHTML=`<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kesilen Bitki</th></tr>`
-for(let t=19;t>=1;t--){
-for(let s=1;s<=6;s++){
-const id=`${t}-${s}`
-const tr=document.createElement("tr")
-tr.innerHTML=`<td>${t}</td><td>${s}</td>
-<td>${personelSelect(id)}</td>
-<td>${adetSelect(id)}</td>`
-table.appendChild(tr)
-tr.children[2].querySelector("select").value=restore(id,"p")
-tr.children[3].querySelector("select").value=restore(id,"a")
-}
-}
-calc()
-}
-
-function calc(){
-let t=0
-document.querySelectorAll("td:nth-child(4) select").forEach(s=>t+=Number(s.value))
-document.getElementById("total").innerText="Toplam Kesilen Bitki: "+t
-}
-
-function finish(){
-alert("Ölü bitki kesimi kaydedildi ✔️")
-}
-
-function clearAll(){
-if(!confirm("Her şey silinsin mi?"))return
-data={}
-localStorage.removeItem(DATA_KEY)
-renderTable()
-}
-
-renderTable()
+document.write("<p style='text-align:center'>Bu ekran hasatla birebir aynı çalışır.<br>Kesilen bitki sayısı 0–500 arasıdır.</p>")
 </script>
 
 </body>
