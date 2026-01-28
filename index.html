@@ -3,163 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hasat Takip</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2e7d32">
+<title>Ölü Bitki Takip</title>
+<meta name="theme-color" content="#c62828">
 <style>
 body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
-h1{text-align:center;color:#2e7d32}
-button{width:100%;padding:10px;margin-top:6px;font-size:15px;border:none;border-radius:6px;background:#2e7d32;color:#fff}
+h1{text-align:center;color:#c62828}
+button{width:100%;padding:10px;margin-top:6px;font-size:15px;border:none;border-radius:6px;background:#c62828;color:#fff}
 .gray{background:#607d8b}
-.red{background:#c62828}
-.section{background:#fff;padding:10px;border-radius:6px;margin-bottom:10px}
-.hidden{display:none}
 table{width:100%;border-collapse:collapse;background:#fff}
 th,td{border:1px solid #ccc;padding:5px;text-align:center}
-th{background:#e8f5e9}
-select,input{width:95%;padding:5px}
-.report{padding:6px;border-bottom:1px solid #ccc;cursor:pointer}
-.report:hover{background:#f1f1f1}
+th{background:#ffebee}
+select{width:95%;padding:5px}
 </style>
 </head>
 
 <body>
-<h1>🌱 Hasat Takip</h1>
+<h1>🍂 Ölü Bitki Takip</h1>
 
-<button onclick="location.href='olu-bitki-takip.html'">🍂 Ölü Bitki Takip</button>
-<button class="gray" onclick="togglePersonel()">👩‍🌾 Personel Yönetimi</button>
-<button class="gray" onclick="toggleReports()">📁 Kaydedilen Raporlar</button>
-
-<div class="section hidden" id="personelSection">
-<input id="personelInput" placeholder="İsim Soyisim">
-<button onclick="addPersonel()">➕ Ekle</button>
-<div id="personelList"></div>
-</div>
-
-<div class="section hidden" id="reportsSection"></div>
+<button class="gray" onclick="location.href='index.html'">🌱 Hasat Takip</button>
 
 <table id="table"></table>
-<div id="total"></div>
-
-<button onclick="saveReport()">✅ Hasadı Bitir & Kaydet</button>
 
 <script>
 const PERSONEL_KEY="sera_personeller";
-const REPORT_KEY="hasat_raporlari";
+const personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[];
 
-const DEFAULT_PERSONELLER=[
-"Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime",
-"Fatma Demiral","Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop",
-"Keziban tasoluk","Keziban yüce","Keziban yüksek","Meryem","Müjgan",
-"Mümine","Neslihan","Özgül","Raziye koçak","Raziye sarı",
-"Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya",
-"Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral",
-"Ummuhan özdemir","Yaşar"
-];
+const table=document.getElementById("table");
+table.innerHTML="<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Adet</th></tr>";
 
-let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY));
-if(!personeller){
-personeller=[...DEFAULT_PERSONELLER];
-localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller));
-}
-
-let raporlar=JSON.parse(localStorage.getItem(REPORT_KEY))||[];
-let currentData={};
-
-function togglePersonel(){
-document.getElementById("personelSection").classList.toggle("hidden");
-renderPersonel();
-}
-
-function addPersonel(){
-const v=document.getElementById("personelInput").value.trim();
-if(!v)return;
-personeller.push(v);
-personeller.sort((a,b)=>a.localeCompare(b,"tr"));
-localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller));
-document.getElementById("personelInput").value="";
-renderPersonel();renderTable();
-}
-
-function deletePersonel(i){
-if(!confirm("Personel silinsin mi?"))return;
-personeller.splice(i,1);
-localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller));
-renderPersonel();renderTable();
-}
-
-function renderPersonel(){
-const d=document.getElementById("personelList");d.innerHTML="";
-personeller.forEach((p,i)=>{
-d.innerHTML+=`${p} <button class="red" onclick="deletePersonel(${i})">Sil</button><br>`;
-});
-}
-
-function renderTable(){
-const t=document.getElementById("table");
-t.innerHTML="<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kutu</th></tr>";
-currentData={};
-for(let tunel=19;tunel>=1;tunel--){
-for(let sira=1;sira<=6;sira++){
-const id=`${tunel}-${sira}`;
-t.innerHTML+=`
+for(let t=19;t>=1;t--){
+for(let s=1;s<=6;s++){
+table.innerHTML+=`
 <tr>
-<td>${tunel}</td><td>${sira}</td>
+<td>${t}</td><td>${s}</td>
 <td>
-<select onchange="setVal('${id}','p',this.value)">
-<option></option>${personellers()}
+<select>
+<option></option>${personeller.map(p=>`<option>${p}</option>`).join("")}
 </select>
 </td>
 <td>
-<select onchange="setVal('${id}','k',this.value)">
-${Array.from({length:201},(_,i)=>`<option>${i}</option>`)}
-</select>
+<select>${Array.from({length:101},(_,i)=>`<option>${i}</option>`)}</select>
 </td>
 </tr>`;
 }}
-calc();
-}
-
-function personellers(){
-return personeller.map(p=>`<option>${p}</option>`).join("");
-}
-
-function setVal(id,key,val){
-currentData[id]=currentData[id]||{};
-currentData[id][key]=val;
-calc();
-}
-
-function calc(){
-let sum=0;
-Object.values(currentData).forEach(v=>sum+=Number(v.k||0));
-document.getElementById("total").innerText="Toplam Kutu: "+sum;
-}
-
-function saveReport(){
-const rapor={
-tarih:new Date().toLocaleDateString("tr-TR"),
-toplam:document.getElementById("total").innerText,
-data:JSON.parse(JSON.stringify(currentData))
-};
-raporlar.unshift(rapor);
-localStorage.setItem(REPORT_KEY,JSON.stringify(raporlar));
-alert("Hasat raporu kaydedildi ✔️");
-}
-
-function toggleReports(){
-const r=document.getElementById("reportsSection");
-r.classList.toggle("hidden");
-r.innerHTML="";
-raporlar.forEach(rep=>{
-r.innerHTML+=`
-<div class="report" onclick="alert(JSON.stringify(rep,null,2))">
-<b>${rep.tarih}</b><br>${rep.toplam}
-</div>`;
-});
-}
-
-renderTable();
 </script>
 </body>
 </html>
