@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hasat Takip</title>
+<title>Ölü Bitki Kesimi</title>
 <link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#2e7d32">
+<meta name="theme-color" content="#c62828">
 <style>
 body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
-h1{text-align:center;color:#2e7d32}
-button{width:100%;padding:12px;margin-top:8px;font-size:16px;background:#2e7d32;color:#fff;border:none;border-radius:6px}
+h1{text-align:center;color:#c62828}
+button{width:100%;padding:12px;margin-top:8px;font-size:16px;background:#c62828;color:#fff;border:none;border-radius:6px}
 button.gray{background:#607d8b}
-button.red{background:#c62828}
+button.red{background:#8e0000}
 table{width:100%;border-collapse:collapse}
 th,td{border:1px solid #ccc;padding:6px;text-align:center}
-th{background:#e8f5e9}
+th{background:#fdecea}
 select{width:95%;padding:6px}
 #total{text-align:center;font-size:18px;font-weight:bold;margin-top:10px}
 </style>
@@ -22,40 +22,29 @@ select{width:95%;padding:6px}
 
 <body>
 
-<h1>🌱 Hasat Takip</h1>
-
-<button onclick="window.location.href='./olu-bitki.html'">🌿 Ölü Bitki Kesimine Geç</button>
+<h1>🌿 Ölü Bitki Kesimi</h1>
+<button class="gray" onclick="window.location.href='./index.html'">⬅️ Hasat Takibe Dön</button>
 
 <table id="table">
-<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kutu</th></tr>
+<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kesilen Bitki</th></tr>
 </table>
 
-<div id="total">Toplam Kutu: 0</div>
+<div id="total">Toplam Kesilen Bitki: 0</div>
 
-<button onclick="saveReport()">✅ Hasadı Bitir ve Kaydet</button>
+<button onclick="saveReport()">✅ Kesimi Bitir ve Kaydet</button>
 <button onclick="window.print()">📄 PDF Paylaş</button>
 <button class="red" onclick="clearPage()">🗑️ Sayfayı Temizle</button>
 
 <script>
 const PERSONEL_KEY="personeller"
-const DATA_KEY="hasat_data"
-const REPORT_KEY="hasat_reports"
+const DATA_KEY="olu_bitki_data"
+const REPORT_KEY="olu_bitki_reports"
 
-const defaultPersoneller=[
-"Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime","Fatma Demiral",
-"Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop","Keziban tasoluk","Keziban yüce",
-"Keziban yüksek","Meryem","Müjgan","Mümine","Neslihan","Özgül","Raziye koçak",
-"Raziye sarı","Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya",
-"Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral","Ummuhan özdemir","Yaşar"
-]
+let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[]
+let data=JSON.parse(localStorage.getItem(DATA_KEY))||{}
+let reports=JSON.parse(localStorage.getItem(REPORT_KEY))||{}
 
-let personeller = JSON.parse(localStorage.getItem(PERSONEL_KEY)) || defaultPersoneller
-localStorage.setItem(PERSONEL_KEY, JSON.stringify(personeller))
-
-let data = JSON.parse(localStorage.getItem(DATA_KEY)) || {}
-let reports = JSON.parse(localStorage.getItem(REPORT_KEY)) || {}
-
-const table = document.getElementById("table")
+const table=document.getElementById("table")
 
 for(let t=19;t>=1;t--){
 for(let s=1;s<=6;s++){
@@ -66,7 +55,7 @@ tr.innerHTML=`
 <td>${t}</td>
 <td>${s}</td>
 <td>${personelSelect(id)}</td>
-<td>${countSelect(id,200)}</td>`
+<td>${countSelect(id,500)}</td>`
 table.appendChild(tr)
 }
 }
@@ -74,7 +63,7 @@ table.appendChild(tr)
 function personelSelect(id){
 let h=`<select onchange="save('${id}','p',this.value)">`
 h+=`<option value="">Seç</option>`
-personellersorted().forEach(p=>h+=`<option>${p}</option>`)
+personeller.sort((a,b)=>a.localeCompare(b,'tr')).forEach(p=>h+=`<option>${p}</option>`)
 return h+=`</select>`
 }
 
@@ -82,10 +71,6 @@ function countSelect(id,max){
 let h=`<select onchange="save('${id}','k',this.value)">`
 for(let i=0;i<=max;i++)h+=`<option>${i}</option>`
 return h+=`</select>`
-}
-
-function personellersorted(){
-return [...personeller].sort((a,b)=>a.localeCompare(b,'tr'))
 }
 
 function save(id,key,val){
@@ -109,14 +94,14 @@ calc()
 function calc(){
 let sum=0
 Object.values(data).forEach(r=>sum+=Number(r.k||0))
-document.getElementById("total").innerText="Toplam Kutu: "+sum
+document.getElementById("total").innerText="Toplam Kesilen Bitki: "+sum
 }
 
 function saveReport(){
 const today=new Date().toLocaleDateString("tr-TR")
 reports[today]=JSON.parse(JSON.stringify(data))
 localStorage.setItem(REPORT_KEY,JSON.stringify(reports))
-alert("Hasat raporu kaydedildi")
+alert("Ölü bitki raporu kaydedildi")
 }
 
 function clearPage(){
