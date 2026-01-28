@@ -3,46 +3,68 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ölü Bitki Kesimi</title>
+<title>Hasat Takip</title>
 <link rel="manifest" href="/hasat-takip/manifest.json">
-<meta name="theme-color" content="#c62828">
+<meta name="theme-color" content="#2e7d32">
 <style>
 body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
-h1{text-align:center;color:#c62828}
-button{width:100%;padding:12px;margin-top:8px;font-size:16px;background:#c62828;color:#fff;border:none;border-radius:6px}
+h1{text-align:center;color:#2e7d32}
+button{width:100%;padding:12px;margin-top:8px;font-size:16px;background:#2e7d32;color:#fff;border:none;border-radius:6px}
 button.gray{background:#607d8b}
-button.red{background:#8e0000}
-table{width:100%;border-collapse:collapse}
+button.red{background:#c62828}
+.section{background:#fff;padding:10px;margin-top:8px;border-radius:6px}
+.hidden{display:none}
+table{width:100%;border-collapse:collapse;background:#fff;margin-top:8px}
 th,td{border:1px solid #ccc;padding:6px;text-align:center}
-th{background:#fdecea}
-select{width:95%;padding:6px}
+th{background:#e8f5e9}
+select,input{width:95%;padding:6px}
+.personel-item{display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #ddd}
 #total{text-align:center;font-size:18px;font-weight:bold;margin-top:10px}
 </style>
 </head>
 
 <body>
 
-<h1>🌿 Ölü Bitki Kesimi</h1>
-<button class="gray" onclick="window.location.href='./index.html'">⬅️ Hasat Takibe Dön</button>
+<h1>🌱 Hasat Takip</h1>
+
+<button class="gray" onclick="togglePersonel()">👥 Personel Yönetimi</button>
+<div id="personelPanel" class="section hidden">
+  <input id="newPersonel" placeholder="İsim Soyisim gir">
+  <button onclick="addPersonel()">➕ Personel Ekle</button>
+  <div id="personelList"></div>
+</div>
+
+<button onclick="location.href='olu-bitki.html'">🌿 Ölü Bitki Takibe Geç</button>
 
 <table id="table">
-<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kesilen Bitki</th></tr>
+<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kutu</th></tr>
 </table>
 
-<div id="total">Toplam Kesilen Bitki: 0</div>
+<div id="total">Toplam Kutu: 0</div>
 
-<button onclick="saveReport()">✅ Kesimi Bitir ve Kaydet</button>
-<button onclick="window.print()">📄 PDF Paylaş</button>
+<button onclick="window.print()">📄 PDF İndir</button>
 <button class="red" onclick="clearPage()">🗑️ Sayfayı Temizle</button>
 
 <script>
-const PERSONEL_KEY="personeller"
-const DATA_KEY="olu_bitki_data"
-const REPORT_KEY="olu_bitki_reports"
+const PERSONEL_KEY="sera_personeller"
+const DATA_KEY="hasat_kayitlar"
 
-let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[]
+const defaultPersoneller=[
+"Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime",
+"Fatma Demiral","Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop",
+"Keziban tasoluk","Keziban yüce","Keziban yüksek","Meryem","Müjgan",
+"Mümine","Neslihan","Özgül","Raziye koçak","Raziye sarı",
+"Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya",
+"Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral",
+"Ummuhan özdemir","Yaşar"
+]
+
+let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||defaultPersoneller
+localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
+
 let data=JSON.parse(localStorage.getItem(DATA_KEY))||{}
-let reports=JSON.parse(localStorage.getItem(REPORT_KEY))||{}
+
+function sorted(){return [...personeller].sort((a,b)=>a.localeCompare(b,'tr'))}
 
 const table=document.getElementById("table")
 
@@ -55,38 +77,37 @@ tr.innerHTML=`
 <td>${t}</td>
 <td>${s}</td>
 <td>${personelSelect(id)}</td>
-<td>${countSelect(id,500)}</td>`
+<td>${kutuSelect(id)}</td>`
 table.appendChild(tr)
 }
 }
 
 function personelSelect(id){
-let h=`<select onchange="save('${id}','p',this.value)">`
-h+=`<option value="">Seç</option>`
-personeller.sort((a,b)=>a.localeCompare(b,'tr')).forEach(p=>h+=`<option>${p}</option>`)
-return h+=`</select>`
+let h=`<select onchange="save('${id}','p',this.value)"><option>Seç</option>`
+sorted().forEach(p=>h+=`<option>${p}</option>`)
+return h+="</select>"
 }
 
-function countSelect(id,max){
+function kutuSelect(id){
 let h=`<select onchange="save('${id}','k',this.value)">`
-for(let i=0;i<=max;i++)h+=`<option>${i}</option>`
-return h+=`</select>`
+for(let i=0;i<=200;i++)h+=`<option>${i}</option>`
+return h+="</select>"
 }
 
-function save(id,key,val){
+function save(id,t,v){
 data[id]=data[id]||{}
-data[id][key]=val
+data[id][t]=v
 localStorage.setItem(DATA_KEY,JSON.stringify(data))
 calc()
 }
 
 function restore(){
 Object.keys(data).forEach(id=>{
-const row=document.querySelector(`tr[data-id="${id}"]`)
-if(!row)return
-const selects=row.querySelectorAll("select")
-if(data[id].p)selects[0].value=data[id].p
-if(data[id].k)selects[1].value=data[id].k
+const r=document.querySelector(`tr[data-id="${id}"]`)
+if(!r)return
+const s=r.querySelectorAll("select")
+if(data[id].p)s[0].value=data[id].p
+if(data[id].k)s[1].value=data[id].k
 })
 calc()
 }
@@ -94,27 +115,58 @@ calc()
 function calc(){
 let sum=0
 Object.values(data).forEach(r=>sum+=Number(r.k||0))
-document.getElementById("total").innerText="Toplam Kesilen Bitki: "+sum
-}
-
-function saveReport(){
-const today=new Date().toLocaleDateString("tr-TR")
-reports[today]=JSON.parse(JSON.stringify(data))
-localStorage.setItem(REPORT_KEY,JSON.stringify(reports))
-alert("Ölü bitki raporu kaydedildi")
+document.getElementById("total").innerText="Toplam Kutu: "+sum
 }
 
 function clearPage(){
-if(!confirm("Temizlensin mi?"))return
+if(!confirm("Sayfa temizlensin mi?"))return
 data={}
 localStorage.removeItem(DATA_KEY)
 document.querySelectorAll("select").forEach(s=>s.value="")
 calc()
 }
 
+function togglePersonel(){
+document.getElementById("personelPanel").classList.toggle("hidden")
+renderPersonel()
+}
+
+function renderPersonel(){
+const d=document.getElementById("personelList")
+d.innerHTML=""
+sorted().forEach((p,i)=>{
+d.innerHTML+=`<div class="personel-item">${p}<button onclick="removePersonel(${i})">❌</button></div>`
+})
+}
+
+function addPersonel(){
+const i=document.getElementById("newPersonel")
+if(!i.value.trim())return
+personeller.push(i.value.trim())
+localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
+i.value=""
+updateSelects()
+renderPersonel()
+}
+
+function removePersonel(i){
+personeller=sorted().filter((_,x)=>x!==i)
+localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
+updateSelects()
+renderPersonel()
+}
+
+function updateSelects(){
+document.querySelectorAll("td select:first-child").forEach(s=>{
+const v=s.value
+s.innerHTML="<option>Seç</option>"
+sorted().forEach(p=>s.innerHTML+=`<option>${p}</option>`)
+s.value=v
+})
+}
+
 restore()
 </script>
+
 </body>
 </html>
-
-
