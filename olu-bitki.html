@@ -2,46 +2,49 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ölü Bitki Kesimi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ölü Bitki Takibi</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
 <style>
-body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
+body{font-family:Arial,sans-serif;background:#f4f6f8;margin:0;padding:10px}
 h1{text-align:center;color:#c62828}
 button{width:100%;padding:12px;margin-top:8px;font-size:16px;background:#c62828;color:#fff;border:none;border-radius:6px;cursor:pointer}
-button.gray{background:#607d8b}
 button.blue{background:#1565c0}
+button.gray{background:#607d8b}
+button.pdf{background:#f44336}
 table{width:100%;border-collapse:collapse;background:#fff;margin-top:10px}
 th,td{border:1px solid #ccc;padding:8px;text-align:center}
-th{background:#fdecea;color:#c62828}
+th{background:#fdecea}
 select{width:100%;padding:8px}
-#total{text-align:center;font-size:18px;font-weight:bold;margin-top:15px;padding:10px;background:#fff}
+#total{text-align:center;font-size:18px;font-weight:bold;margin:15px 0;padding:10px;background:#fff}
 </style>
 </head>
 <body>
 
 <h1>🌿 Ölü Bitki Kesimi</h1>
-<button class="gray" onclick="window.location.href='index.html'">⬅️ Hasat Takibe Dön</button>
+<button class="gray" onclick="window.location.href='index.html'">⬅️ Geri Dön</button>
 
 <table id="table">
-<thead><tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Adet</th></tr></thead>
-<tbody id="tableBody"></tbody>
+    <thead><tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Adet</th></tr></thead>
+    <tbody id="tableBody"></tbody>
 </table>
 
-<div id="total">Toplam Kesilen Bitki: 0</div>
+<div id="total">Toplam Kesilen: 0</div>
 
-<div style="background:#fff; padding:10px; margin-top:10px; border-radius:6px; border:1px solid #ddd">
+<div style="background:#fff; padding:10px; border-radius:6px; border:1px solid #ddd">
+    <button class="pdf" onclick="generatePDF()">📄 Tabloyu PDF Yap</button>
     <button class="blue" onclick="finishDay()">💾 Günü Bitir ve Arşivle</button>
-    <button class="gray" onclick="downloadReport()">📊 Raporu İndir (Excel)</button>
+    <button class="gray" onclick="downloadReport()">📊 Eski Kayıtları Excel İndir</button>
 </div>
 
 <script>
-const PERSONEL_KEY = "sera_personeller"; 
-const DATA_KEY = "olu_bitki_data";
-const HISTORY_KEY = "genel_is_gecmisi";
-
-const defaultP = ["Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime","Fatma Demiral","Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop","Keziban tasoluk","Keziban yüce","Keziban yüksek","Meryem","Müjgan","Mümine","Neslihan","Özgül","Raziye koçak","Raziye sarı","Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya","Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral","Ummuhan özdemir","Yaşar"];
-
-let personeller = JSON.parse(localStorage.getItem(PERSONEL_KEY)) || defaultP;
+const PERSONEL_KEY = "sera_personeller", DATA_KEY = "olu_bitki_data", HISTORY_KEY = "genel_is_gecmisi";
+let personeller = JSON.parse(localStorage.getItem(PERSONEL_KEY)) || [];
 let data = JSON.parse(localStorage.getItem(DATA_KEY)) || {};
 
 function sorted() { return [...personeller].sort((a, b) => a.localeCompare(b, 'tr')); }
@@ -59,7 +62,7 @@ function renderTable() {
 }
 
 function pSel(id) {
-    let o = `<option value="">Seçiniz</option>`;
+    let o = `<option value="">Seç</option>`;
     sorted().forEach(p => o += `<option value="${p}">${p}</option>`);
     return `<select onchange="save('${id}','p',this.value)">${o}</select>`;
 }
@@ -71,8 +74,7 @@ function kSel(id) {
 }
 
 function save(id, t, v) {
-    data[id] = data[id] || {};
-    data[id][t] = v;
+    data[id] = data[id] || {}; data[id][t] = v;
     localStorage.setItem(DATA_KEY, JSON.stringify(data));
     calc();
 }
@@ -80,33 +82,7 @@ function save(id, t, v) {
 function calc() {
     let sum = 0;
     Object.values(data).forEach(i => sum += Number(i.k || 0));
-    document.getElementById("total").innerText = "Toplam Kesilen Bitki: " + sum;
-}
-
-function finishDay(){
-    if(!confirm("Veriler Ölü Bitki olarak arşive eklenecek. Emin misiniz?")) return;
-    let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
-    const tarih=new Date().toLocaleDateString('tr-TR');
-    Object.keys(data).forEach(id=>{
-        if(data[id].p && data[id].k > 0){
-            const [tun,sir]=id.split("-");
-            history.push({tarih, tur:"Ölü Bitki", p:data[id].p, t:tun, s:sir, a:data[id].k});
-        }
-    });
-    localStorage.setItem(HISTORY_KEY,JSON.stringify(history));
-    data={}; localStorage.removeItem(DATA_KEY);
-    alert("Arşivlendi!"); location.reload();
-}
-
-function downloadReport(){
-    let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
-    if(!history.length){alert("Rapor yok!"); return;}
-    let csv="\uFEFFTarih;İş Türü;Personel;Tünel;Sıra;Adet\n";
-    history.forEach(r=>csv+=`${r.tarih};${r.tur};${r.p};${r.t};${r.s};${r.a}\n`);
-    const blob=new Blob([csv],{type:'text/csv'});
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);
-    a.download="rapor.csv"; a.click();
+    document.getElementById("total").innerText = "Toplam Kesilen: " + sum;
 }
 
 function restore() {
@@ -119,6 +95,49 @@ function restore() {
         }
     });
     calc();
+}
+
+async function generatePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const tarih = new Date().toLocaleDateString('tr-TR');
+    doc.text("Olu Bitki Kesim Raporu - " + tarih, 14, 15);
+    let tableData = [];
+    Object.keys(data).forEach(id => {
+        if(data[id].p && data[id].k > 0) {
+            const [tun, sir] = id.split("-");
+            tableData.push([tun, sir, data[id].p, data[id].k]);
+        }
+    });
+    if(tableData.length === 0) { alert("Tablo boş!"); return; }
+    doc.autoTable({ head: [['Tünel', 'Sıra', 'Personel', 'Adet']], body: tableData, startY: 20 });
+    doc.save(`Olu_Bitki_Raporu_${tarih}.pdf`);
+}
+
+function finishDay(){
+    if(!confirm("Arşivlensin mi?")) return;
+    let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
+    const tarih=new Date().toLocaleDateString('tr-TR');
+    Object.keys(data).forEach(id=>{
+        if(data[id].p && data[id].k > 0){
+            const [tun,sir]=id.split("-");
+            history.push({tarih, tur:"Ölü Bitki", p:data[id].p, t:tun, s:sir, a:data[id].k});
+        }
+    });
+    localStorage.setItem(HISTORY_KEY,JSON.stringify(history));
+    data={}; localStorage.removeItem(DATA_KEY);
+    location.reload();
+}
+
+function downloadReport(){
+    let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
+    if(!history.length){alert("Rapor yok!"); return;}
+    let csv="\uFEFFTarih;İş Türü;Personel;Tünel;Sıra;Adet\n";
+    history.forEach(r=>csv+=`${r.tarih};${r.tur};${r.p};${r.t};${r.s};${r.a}\n`);
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="genel_arsiv.csv"; a.click();
 }
 
 renderTable();
