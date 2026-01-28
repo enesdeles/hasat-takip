@@ -154,12 +154,25 @@ function finishDay(){
 function downloadReport(){
     let history=JSON.parse(localStorage.getItem(HISTORY_KEY))||[];
     if(!history.length){alert("Rapor yok!"); return;}
+    
+    // Excel'in Türkçe karakterleri ve tarihleri tanıması için UTF-8 BOM ekliyoruz
     let csv="\uFEFFTarih;İş Türü;Personel;Tünel;Sıra;Adet\n";
-    history.forEach(r=>csv+=`${r.tarih};${r.tur};${r.p};${r.t};${r.s};${r.a}\n`);
-    const blob=new Blob([csv],{type:'text/csv'});
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);
-    a.download="genel_arsiv.csv"; a.click();
+    
+    history.forEach(r => {
+        // Tarihin Excel'de metin olarak kalması için başına tek tırnak eklenebilir 
+        // veya GG.AA.YYYY formatı garanti edilir
+        let formatiTarih = r.tarih; 
+        csv += `${formatiTarih};${r.tur};${r.p};${r.t};${r.s};${r.a}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = "Sera_Hasat_Raporu.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 function togglePersonel(){document.getElementById("personelPanel").classList.toggle("hidden"); renderPersonel();}
@@ -184,3 +197,4 @@ renderTable();
 </script>
 </body>
 </html>
+
