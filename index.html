@@ -4,72 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hasat Takip</title>
-
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2e7d32">
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #f4f6f8;
-  margin: 0;
-  padding: 10px;
-}
-h1 {
-  text-align: center;
-  color: #2e7d32;
-}
-button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 8px;
-  font-size: 16px;
-  background: #2e7d32;
-  color: white;
-  border: none;
-  border-radius: 6px;
-}
-button.small { padding: 6px; font-size: 14px; }
-button.red { background: #c62828; }
-.section {
-  background: white;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-}
-.hidden { display: none; }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-}
-th, td {
-  border: 1px solid #ccc;
-  padding: 6px;
-  text-align: center;
-}
-th { background: #e8f5e9; }
-select { width: 95%; padding: 6px; }
-#total {
-  margin-top: 15px;
-  font-size: 18px;
-  font-weight: bold;
-  text-align: center;
-}
-
-@media print {
-  button, .section { display: none !important; }
-  select {
-    border: none;
-    appearance: none;
-    -webkit-appearance: none;
-  }
-  #total {
-    font-size: 20px;
-    border-top: 2px solid black;
-    padding-top: 10px;
-  }
-  @page { size: A4; margin: 15mm; }
+body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
+h1{text-align:center;color:#2e7d32}
+button{width:100%;padding:12px;margin-top:8px;font-size:16px;background:#2e7d32;color:#fff;border:none;border-radius:6px}
+button.small{padding:6px;font-size:14px}
+button.red{background:#c62828}
+.section{background:#fff;padding:10px;margin-bottom:10px;border-radius:6px}
+.hidden{display:none}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{border:1px solid #ccc;padding:6px;text-align:center}
+th{background:#e8f5e9}
+select{width:95%;padding:6px}
+#total{text-align:center;font-size:18px;font-weight:bold;margin-top:10px}
+@media print{
+button,.section{display:none}
+select{border:none;appearance:none}
+#total{font-size:20px;border-top:2px solid #000;padding-top:10px}
 }
 </style>
 </head>
@@ -78,143 +32,134 @@ select { width: 95%; padding: 6px; }
 
 <h1>🌱 Hasat Takip</h1>
 
+<button onclick="location.href='olu-bitki-takip.html'">
+🌿 Ölü Bitki Takibe Geç
+</button>
+
 <button class="small" onclick="togglePersonel()">👩‍🌾 Personel Yönetimi</button>
 
 <div class="section hidden" id="personelSection">
-  <input id="personelInput" placeholder="İsim Soyisim">
-  <button class="small" onclick="addPersonel()">Ekle</button>
-  <div id="personelList"></div>
+<input id="personelInput" placeholder="İsim Soyisim">
+<button class="small" onclick="addPersonel()">Ekle</button>
+<div id="personelList"></div>
 </div>
 
-<table id="hasatTable">
+<table id="table">
 <tr>
-  <th>Tünel</th>
-  <th>Sıra</th>
-  <th>Personel</th>
-  <th>Kutu</th>
+<th>Tünel</th>
+<th>Sıra</th>
+<th>Personel</th>
+<th>Kutu</th>
 </tr>
 </table>
 
 <div id="total">Toplam Kutu: 0</div>
-
-<button onclick="downloadPDF()">PDF İndir</button>
+<button onclick="window.print()">PDF İndir</button>
 <button class="red" onclick="clearPage()">🗑️ Sayfayı Temizle</button>
 
 <script>
-// PERSONEL
-let personeller = JSON.parse(localStorage.getItem("personeller")) || [];
-let kayitlar = JSON.parse(localStorage.getItem("kayitlar")) || {};
+const PERSONEL_KEY="sera_personeller";
+const DATA_KEY="hasat_kayitlar";
 
-function togglePersonel() {
-  document.getElementById("personelSection").classList.toggle("hidden");
+let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[];
+let kayitlar=JSON.parse(localStorage.getItem(DATA_KEY))||{};
+
+function togglePersonel(){
+document.getElementById("personelSection").classList.toggle("hidden")
 }
 
-function savePersoneller() {
-  personeller.sort((a,b)=>a.localeCompare(b,"tr"));
-  localStorage.setItem("personeller", JSON.stringify(personeller));
+function savePersoneller(){
+personeller.sort((a,b)=>a.localeCompare(b,"tr"))
+localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller))
 }
 
-function renderPersonelList() {
-  const div = document.getElementById("personelList");
-  div.innerHTML = "";
-  personeller.forEach((p,i)=>{
-    div.innerHTML += `
-      <div style="display:flex;justify-content:space-between">
-        ${p}
-        <button class="small red" onclick="removePersonel(${i})">Sil</button>
-      </div>`;
-  });
-  updateAllPersonelSelects();
+function renderPersonelList(){
+const d=document.getElementById("personelList")
+d.innerHTML=""
+personeller.forEach((p,i)=>{
+d.innerHTML+=`<div style="display:flex;justify-content:space-between">${p}
+<button class="small red" onclick="removePersonel(${i})">Sil</button></div>`
+})
+updateAllPersonelSelects()
 }
 
-function addPersonel() {
-  const i=document.getElementById("personelInput");
-  if (!i.value.trim()) return;
-  personeller.push(i.value.trim());
-  i.value="";
-  savePersoneller();
-  renderPersonelList();
+function addPersonel(){
+const i=document.getElementById("personelInput")
+if(!i.value.trim())return
+personeller.push(i.value.trim())
+i.value=""
+savePersoneller()
+renderPersonelList()
 }
 
-function removePersonel(i) {
-  personeller.splice(i,1);
-  savePersoneller();
-  renderPersonelList();
+function removePersonel(i){
+personeller.splice(i,1)
+savePersoneller()
+renderPersonelList()
 }
 
-function personelSelect(id) {
-  let html=`<select onchange="saveValue('${id}','p',this.value)">`;
-  html+=`<option value="">Seç</option>`;
-  personeller.forEach(p=>html+=`<option>${p}</option>`);
-  html+=`</select>`;
-  return html;
+function personelSelect(id){
+let h=`<select onchange="saveValue('${id}','p',this.value)">`
+h+=`<option value="">Seç</option>`
+personeller.forEach(p=>h+=`<option>${p}</option>`)
+h+=`</select>`
+return h
 }
 
-function kutuSelect(id) {
-  let html=`<select onchange="saveValue('${id}','k',this.value);calcTotal()">`;
-  for(let i=0;i<=200;i++) html+=`<option>${i}</option>`;
-  html+=`</select>`;
-  return html;
+function kutuSelect(id){
+let h=`<select onchange="saveValue('${id}','k',this.value);calc()">`
+for(let i=0;i<=200;i++)h+=`<option>${i}</option>`
+h+=`</select>`
+return h
 }
 
-function saveValue(id,type,val) {
-  kayitlar[id]=kayitlar[id]||{};
-  kayitlar[id][type]=val;
-  localStorage.setItem("kayitlar",JSON.stringify(kayitlar));
+function saveValue(id,t,v){
+kayitlar[id]=kayitlar[id]||{}
+kayitlar[id][t]=v
+localStorage.setItem(DATA_KEY,JSON.stringify(kayitlar))
 }
 
-function restoreValue(id,type) {
-  return kayitlar[id]?.[type] || "";
-}
+function restore(id,t){return kayitlar[id]?.[t]||""}
 
-// TABLO
-const table=document.getElementById("hasatTable");
+const table=document.getElementById("table")
 for(let t=19;t>=1;t--){
-  for(let s=1;s<=6;s++){
-    const id=`${t}-${s}`;
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td>${t}</td>
-      <td>${s}</td>
-      <td>${personelSelect(id)}</td>
-      <td>${kutuSelect(id)}</td>`;
-    table.appendChild(tr);
-
-    tr.querySelector("td:nth-child(3) select").value=restoreValue(id,"p");
-    tr.querySelector("td:nth-child(4) select").value=restoreValue(id,"k");
-  }
+for(let s=1;s<=6;s++){
+const id=`${t}-${s}`
+const tr=document.createElement("tr")
+tr.innerHTML=`<td>${t}</td><td>${s}</td>
+<td>${personelSelect(id)}</td>
+<td>${kutuSelect(id)}</td>`
+table.appendChild(tr)
+tr.querySelector("td:nth-child(3) select").value=restore(id,"p")
+tr.querySelector("td:nth-child(4) select").value=restore(id,"k")
+}
 }
 
 function updateAllPersonelSelects(){
-  document.querySelectorAll("td:nth-child(3) select").forEach((s,i)=>{
-    const id=Object.keys(kayitlar)[i];
-    const val=s.value;
-    s.innerHTML=`<option value="">Seç</option>`+
-      personeller.map(p=>`<option>${p}</option>`).join("");
-    s.value=val;
-  });
+document.querySelectorAll("td:nth-child(3) select").forEach(s=>{
+const v=s.value
+s.innerHTML=`<option value="">Seç</option>`+
+personeller.map(p=>`<option>${p}</option>`).join("")
+s.value=v
+})
 }
 
-function calcTotal(){
-  let total=0;
-  document.querySelectorAll("td:nth-child(4) select")
-    .forEach(s=>total+=Number(s.value));
-  document.getElementById("total").innerText="Toplam Kutu: "+total;
+function calc(){
+let t=0
+document.querySelectorAll("td:nth-child(4) select").forEach(s=>t+=Number(s.value))
+document.getElementById("total").innerText="Toplam Kutu: "+t
 }
 
 function clearPage(){
-  if(!confirm("Tüm hasat verileri silinsin mi?")) return;
-  kayitlar={};
-  localStorage.removeItem("kayitlar");
-  document.querySelectorAll("select").forEach(s=>s.value="");
-  calcTotal();
+if(!confirm("Tüm hasat verileri silinsin mi?"))return
+kayitlar={}
+localStorage.removeItem(DATA_KEY)
+document.querySelectorAll("select").forEach(s=>s.value="")
+calc()
 }
 
-function downloadPDF(){ window.print(); }
-
-renderPersonelList();
-calcTotal();
+renderPersonelList()
+calc()
 </script>
-
 </body>
 </html>
