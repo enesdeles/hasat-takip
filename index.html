@@ -3,49 +3,158 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ölü Bitki Takip</title>
-<meta name="theme-color" content="#c62828">
+<title>Hasat Takip</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2e7d32">
 <style>
 body{font-family:Arial;background:#f4f6f8;margin:0;padding:10px}
-h1{text-align:center;color:#c62828}
-button{width:100%;padding:10px;margin-top:6px;font-size:15px;border:none;border-radius:6px;background:#c62828;color:#fff}
+h1{text-align:center;color:#2e7d32}
+button{width:100%;padding:10px;margin:6px 0;border:none;border-radius:6px;background:#2e7d32;color:#fff;font-size:15px}
 .gray{background:#607d8b}
+.red{background:#c62828}
+.section{background:#fff;padding:10px;border-radius:6px;margin-bottom:10px}
+.hidden{display:none}
 table{width:100%;border-collapse:collapse;background:#fff}
 th,td{border:1px solid #ccc;padding:5px;text-align:center}
-th{background:#ffebee}
-select{width:95%;padding:5px}
+th{background:#e8f5e9}
+select,input{width:95%;padding:5px}
+.report{border-bottom:1px solid #ccc;padding:6px;cursor:pointer}
 </style>
 </head>
 
 <body>
-<h1>🍂 Ölü Bitki Takip</h1>
+<h1>🌱 Hasat Takip</h1>
 
-<button class="gray" onclick="location.href='index.html'">🌱 Hasat Takip</button>
+<button onclick="location.href='olu-bitki.html'">🍂 Ölü Bitki Kesimi</button>
+<button class="gray" onclick="togglePersonel()">👩‍🌾 Personel Yönetimi</button>
+<button class="gray" onclick="toggleReports()">📁 Kaydedilen Raporlar</button>
+
+<div class="section hidden" id="personelSection">
+<input id="pInput" placeholder="İsim Soyisim">
+<button onclick="addPersonel()">➕ Ekle</button>
+<div id="pList"></div>
+</div>
+
+<div class="section hidden" id="reports"></div>
 
 <table id="table"></table>
+<div id="total"></div>
+
+<button onclick="saveReport()">✅ Hasadı Bitir & Kaydet</button>
+<button onclick="window.print()">📄 PDF Paylaş</button>
+<button class="red" onclick="clearPage()">🗑️ Sayfayı Temizle</button>
 
 <script>
 const PERSONEL_KEY="sera_personeller";
-const personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||[];
+const DATA_KEY="hasat_devam";
+const REPORT_KEY="sera_raporlar";
 
-const table=document.getElementById("table");
-table.innerHTML="<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Adet</th></tr>";
+const DEFAULT_PERSONELLER=[
+"Akile","Beyhan","Emine türk","Emine yavuz","Emiş","Esengül","Fadime",
+"Fatma Demiral","Fatma karabulut","Gülbeyaz güler","Gülbeyaz Öztop",
+"Keziban tasoluk","Keziban yüce","Keziban yüksek","Meryem","Müjgan",
+"Mümine","Neslihan","Özgül","Raziye koçak","Raziye sarı",
+"Safiye aslan","Safiye coşkun","Safiye karaca","Satı karakaya",
+"Satı taskin","Sultan","Şengül","Şerife avcı","Şerife demiral",
+"Ummuhan özdemir","Yaşar"
+];
 
-for(let t=19;t>=1;t--){
-for(let s=1;s<=6;s++){
+let personeller=JSON.parse(localStorage.getItem(PERSONEL_KEY))||DEFAULT_PERSONELLER;
+localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller));
+
+let data=JSON.parse(localStorage.getItem(DATA_KEY))||{};
+let raporlar=JSON.parse(localStorage.getItem(REPORT_KEY))||[];
+
+function togglePersonel(){
+document.getElementById("personelSection").classList.toggle("hidden");
+renderPersonel();
+}
+
+function addPersonel(){
+const v=pInput.value.trim();
+if(!v)return;
+personeller.push(v);
+personeller.sort((a,b)=>a.localeCompare(b,"tr"));
+localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller));
+pInput.value="";
+renderPersonel();renderTable();
+}
+
+function renderPersonel(){
+pList.innerHTML="";
+personeller.forEach((p,i)=>{
+pList.innerHTML+=`${p} <button class="red" onclick="delPersonel(${i})">Sil</button><br>`;
+});
+}
+
+function delPersonel(i){
+if(!confirm("Silinsin mi?"))return;
+personeller.splice(i,1);
+localStorage.setItem(PERSONEL_KEY,JSON.stringify(personeller));
+renderPersonel();renderTable();
+}
+
+function renderTable(){
+table.innerHTML="<tr><th>Tünel</th><th>Sıra</th><th>Personel</th><th>Kutu</th></tr>";
+for(let t=19;t>=1;t--)for(let s=1;s<=6;s++){
+const id=`${t}-${s}`,r=data[id]||{};
 table.innerHTML+=`
 <tr>
 <td>${t}</td><td>${s}</td>
-<td>
-<select>
-<option></option>${personeller.map(p=>`<option>${p}</option>`).join("")}
-</select>
-</td>
-<td>
-<select>${Array.from({length:101},(_,i)=>`<option>${i}</option>`)}</select>
-</td>
-</tr>`;
-}}
+<td><select onchange="setVal('${id}','p',this.value)">
+<option></option>${personeller.map(p=>`<option ${r.p==p?"selected":""}>${p}</option>`).join("")}
+</select></td>
+<td><select onchange="setVal('${id}','k',this.value)">
+${Array.from({length:201},(_,i)=>`<option ${r.k==i?"selected":""}>${i}</option>`).join("")}
+</select></td></tr>`;
+}
+calc();
+}
+
+function setVal(id,k,v){
+data[id]=data[id]||{};data[id][k]=v;
+localStorage.setItem(DATA_KEY,JSON.stringify(data));
+calc();
+}
+
+function calc(){
+let sum=0;
+Object.values(data).forEach(v=>sum+=Number(v.k||0));
+total.innerText="Toplam Kutu: "+sum;
+}
+
+function saveReport(){
+raporlar.unshift({
+tip:"hasat",
+tarih:new Date().toLocaleDateString("tr-TR"),
+toplam:total.innerText,
+data:JSON.parse(JSON.stringify(data))
+});
+localStorage.setItem(REPORT_KEY,JSON.stringify(raporlar));
+alert("Hasat kaydedildi ✔️");
+}
+
+function toggleReports(){
+reports.classList.toggle("hidden");
+reports.innerHTML="";
+raporlar.filter(r=>r.tip=="hasat").forEach((r,i)=>{
+reports.innerHTML+=`
+<div class="report" onclick="openReport(${i})">
+<b>${r.tarih}</b><br>${r.toplam}
+</div>`;
+});
+}
+
+function openReport(i){
+location.href=`rapor.html?i=${i}`;
+}
+
+function clearPage(){
+if(!confirm("Temizlensin mi?"))return;
+data={};localStorage.removeItem(DATA_KEY);renderTable();
+}
+
+renderTable();
 </script>
 </body>
 </html>
