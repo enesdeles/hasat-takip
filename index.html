@@ -68,7 +68,7 @@ function sorted(){return [...personeller].sort((a,b)=>a.localeCompare(b,'tr'))}
 
 function renderTable(){
     let h="";
-    for(let t=19;t>=1;t--){
+    for(let t=38;t>=1;t--){
         for(let s=1;s<=6;s++){
             const id=`${t}-${s}`;
             h+=`<tr data-id="${id}"><td><b>${t}</b></td><td>${s}</td><td>${pSel(id)}</td><td>${kSel(id)}</td></tr>`;
@@ -236,6 +236,7 @@ renderTable();
 </script>
 </body>
 </html>
+
 
 
 
