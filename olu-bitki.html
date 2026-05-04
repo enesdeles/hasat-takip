@@ -72,7 +72,7 @@ function sorted() {
 // Tabloyu Oluşturma
 function renderTable() {
     let html = "";
-    for(let t = 38; t >= 1; t--) {
+    for(let t = 23; t >= 1; t--) {
         for(let s = 1; s <= 6; s++) {
             const id = `${t}-${s}`;
             html += `<tr data-id="${id}">
@@ -113,7 +113,7 @@ function saveData(id, type, val) {
 function calculateTotal() {
     let sum = 0;
     Object.values(data).forEach(item => sum += Number(item.k || 0));
-    document.getElementById("total").innerText = "Toplam Kesilen: " + sum;
+    document.getElementById("total").innerText = "Toplam Kutu: " + sum;
 }
 
 function restoreValues() {
@@ -158,7 +158,7 @@ async function generatePDF() {
 
 // GÜNÜ BİTİR VE ARŞİVLE
 function finishDay() {
-    if(!confirm("Bugünkü ölü bitki verileri arşive eklenecek ve sayfa temizlenecek. Onaylıyor musunuz?")) return;
+    if(!confirm("Bugünkü Sera 2 verileri arşive eklenecek ve sayfa temizlenecek. Onaylıyor musunuz?")) return;
     
     let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
     const tarih = new Date().toLocaleDateString('tr-TR');
@@ -168,7 +168,7 @@ function finishDay() {
             const [tun, sir] = id.split("-");
             history.push({
                 tarih: tarih,
-                tur: "Ölü Bitki",
+                tur: "Sera 2",
                 p: data[id].p,
                 t: tun,
                 s: sir,
@@ -190,7 +190,7 @@ function downloadReport() {
     if(history.length === 0) { alert("Arşivde kayıt yok!"); return; }
     
     // UTF-8 BOM ve Noktalı Virgül (Türkçe Excel için en uyumlu format)
-    let csv = "\uFEFFTarih;İş Türü;Personel;Tünel;Sıra;Adet\n";
+    let csv = "\uFEFFTarih;İş Türü;Personel;Tünel;Sıra;Kutu\n";
     
     history.forEach(r => {
         // Tarih formatını Excel'in kafasını karıştırmayacak şekilde GG.AA.YYYY yapıyoruz
@@ -213,10 +213,10 @@ async function sendToGoogleSheets() {
     let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
     
     // SADECE ÖLÜ BİTKİ VERİLERİNİ SEÇ
-    let currentData = history.filter(row => row.tur === "Ölü Bitki");
+    let currentData = history.filter(row => row.tur === "Sera 2");
 
     if(currentData.length === 0) { 
-        alert("Gönderilecek yeni Ölü Bitki kaydı bulunamadı!"); 
+        alert("Gönderilecek yeni Sera 2 kaydı bulunamadı!"); 
         return; 
     }
 
@@ -231,11 +231,11 @@ async function sendToGoogleSheets() {
             body: JSON.stringify(currentData)
         });
         
-        // BAŞARILIYSA: Sadece gönderilen Ölü Bitki verilerini sil, Hasatlar kalsın
-        let remainingData = history.filter(row => row.tur !== "Ölü Bitki");
+        // BAŞARILIYSA: Sadece gönderilen Sera 2 verilerini sil, Hasatlar kalsın
+        let remainingData = history.filter(row => row.tur !== "Sera 2");
         localStorage.setItem(HISTORY_KEY, JSON.stringify(remainingData));
 
-        alert("✅ Ölü Bitki verileri başarıyla gönderildi ve cihazdan temizlendi!");
+        alert("✅ Sera 2 verileri başarıyla gönderildi ve cihazdan temizlendi!");
     } catch (error) {
         alert("❌ Hata: " + error);
     } finally {
