@@ -86,7 +86,7 @@ function pSel(id){
 
 function kSel(id){
     let o="";
-    for(let i=0;i<=200;i++)o+=`<option value="${i}">${i}</option>`;
+    for(let i=0;i<=500;i++)o+=`<option value="${i}">${i}</option>`;
     return `<select onchange="save('${id}','k',this.value)">${o}</select>`;
 }
 
